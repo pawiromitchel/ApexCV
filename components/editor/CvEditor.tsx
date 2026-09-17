@@ -26,6 +26,8 @@ import {
   Edit2,
   Check,
   Share2,
+  FileUp,
+  Loader2,
 } from "lucide-react";
 
 interface CvEditorProps {
@@ -42,10 +44,59 @@ export function CvEditor({ initialData }: CvEditorProps) {
   const [isRenaming, setIsRenaming] = useState<boolean>(false);
   const [titleInput, setTitleInput] = useState<string>(initialData.title);
   const [isDuplicating, setIsDuplicating] = useState<boolean>(false);
+  const [isImportingPdf, setIsImportingPdf] = useState<boolean>(false);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
 
   // Debounced auto-save timer ref
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isFirstRender = useRef(true);
+
+  const handleImportPdf = async (file: File) => {
+    if (!file || !file.name.endsWith(".pdf")) {
+      alert("Please upload a valid .pdf file.");
+      return;
+    }
+
+    try {
+      setIsImportingPdf(true);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("save", "false");
+
+      const res = await fetch("/api/resumes/parse-pdf", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await res.json();
+      if (result.success && result.resume) {
+        const parsed = result.resume;
+        setData((prev) => ({
+          ...prev,
+          title: parsed.title || prev.title,
+          personalInfo: {
+            ...prev.personalInfo,
+            ...parsed.personalInfo,
+          },
+          summary: parsed.summary || prev.summary,
+          experience: parsed.experience?.length > 0 ? parsed.experience : prev.experience,
+          education: parsed.education?.length > 0 ? parsed.education : prev.education,
+          skills: parsed.skills?.length > 0 ? parsed.skills : prev.skills,
+          projects: parsed.projects?.length > 0 ? parsed.projects : prev.projects,
+          certifications: parsed.certifications?.length > 0 ? parsed.certifications : prev.certifications,
+        }));
+        if (parsed.title) setTitleInput(parsed.title);
+      } else {
+        alert(result.error || "Failed to parse PDF resume.");
+      }
+    } catch (err: any) {
+      console.error("PDF import error:", err);
+      alert(err?.message || "Failed to parse PDF resume.");
+    } finally {
+      setIsImportingPdf(false);
+      if (pdfInputRef.current) pdfInputRef.current.value = "";
+    }
+  };
 
   // Auto-save logic
   const saveResumeToServer = useCallback(async (currentData: ResumeData) => {
@@ -219,6 +270,36 @@ export function CvEditor({ initialData }: CvEditorProps) {
 
         {/* Right Action Buttons */}
         <div className="flex items-center gap-2">
+          {/* Hidden PDF Input */}
+          <input
+            ref={pdfInputRef}
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleImportPdf(file);
+            }}
+          />
+
+          {/* Import PDF Button */}
+          <button
+            type="button"
+            disabled={isImportingPdf}
+            onClick={() => pdfInputRef.current?.click()}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white text-xs font-semibold transition-all"
+            title="Upload an existing PDF resume to replace or prefill fields"
+          >
+            {isImportingPdf ? (
+              <Loader2 className="w-3.5 h-3.5 text-sky-400 animate-spin" />
+            ) : (
+              <FileUp className="w-3.5 h-3.5 text-sky-400" />
+            )}
+            <span className="hidden md:inline">
+              {isImportingPdf ? "Parsing..." : "Import PDF"}
+            </span>
+          </button>
+
           {/* Duplicate Button */}
           <button
             type="button"
