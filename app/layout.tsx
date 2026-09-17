@@ -34,7 +34,7 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "CVForge | Modern High-Impact CV & Resume Builder",
+  title: "ApexCV | Modern High-Impact CV & Resume Builder",
   description: "Next-generation CV builder with industry-standard templates, live split-screen preview, instant autosave, and pixel-perfect PDF export.",
 };
 

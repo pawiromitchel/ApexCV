@@ -1,21 +1,19 @@
-version: "3.8"
-
 services:
-  cv-builder:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: cvforge-app
+  apexcv:
+    image: node:22-alpine
+    container_name: apexcv-app
     restart: unless-stopped
+    working_dir: /apexcv
     ports:
       - "3001:3001"
     environment:
       - NODE_ENV=production
       - PORT=3001
-      - DB_PATH=/app/data/cv_builder.db
+      - DB_PATH=/apexcv/data/cv_builder.db
     volumes:
-      - cv_data:/app/data
+      - .:/apexcv
+      - apexcv_data:/apexcv/data
+    command: sh -c "mkdir -p /apexcv/data && npx next start -p 3001"
 
 volumes:
-  cv_data:
-    driver: local
+  apexcv_data:

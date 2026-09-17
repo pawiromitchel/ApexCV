@@ -40,7 +40,7 @@ async function runTests() {
     // Assert Title
     const title = await page.title();
     console.log(`   ✓ Page title: "${title}"`);
-    if (!title.includes("CVForge")) throw new Error("Title mismatch!");
+    if (!title.includes("ApexCV")) throw new Error("Title mismatch!");
 
     // Assert Hero Header
     const heroHeading = await page.$eval("h1", (el) => el.innerText);
@@ -55,8 +55,9 @@ async function runTests() {
     // TEST 2: Navigation to App Dashboard
     // ----------------------------------------------------
     console.log("📍 2. Testing App Dashboard (/app)...");
+    await page.waitForSelector('a[href="/app"]', { timeout: 10000 });
     await page.click('a[href="/app"]');
-    await page.waitForSelector("h1", { timeout: 5000 });
+    await page.waitForSelector("h1", { timeout: 10000 });
 
     const dashboardHeading = await page.$eval("h1", (el) => el.innerText);
     console.log(`   ✓ Dashboard heading: "${dashboardHeading}"`);

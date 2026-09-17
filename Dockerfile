@@ -28,13 +28,13 @@ ENV DB_PATH=/app/data/cv_builder.db
 
 RUN mkdir -p /app/data && chown -R node:node /app
 
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/package-lock.json ./package-lock.json
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/lib ./lib
-COPY --from=builder /app/next.config.mjs ./next.config.mjs
+COPY --chown=node:node --from=builder /app/package.json ./package.json
+COPY --chown=node:node --from=builder /app/package-lock.json ./package-lock.json
+COPY --chown=node:node --from=builder /app/public ./public
+COPY --chown=node:node --from=builder /app/.next ./.next
+COPY --chown=node:node --from=builder /app/node_modules ./node_modules
+COPY --chown=node:node --from=builder /app/lib ./lib
+COPY --chown=node:node --from=builder /app/next.config.mjs ./next.config.mjs
 
 USER node
 

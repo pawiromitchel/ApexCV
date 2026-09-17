@@ -82,7 +82,7 @@ export default function LandingPage() {
           </div>
           <div className="flex flex-col">
             <span className="font-extrabold text-lg tracking-tight text-white flex items-center gap-1.5">
-              CVForge
+              ApexCV
               <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
                 PRO
               </span>
@@ -104,8 +104,8 @@ export default function LandingPage() {
           <a href="#monetization" className="hover:text-white transition-colors">
             Pricing & Pro
           </a>
-          <a href="#why-cvforge" className="hover:text-white transition-colors">
-            Why CVForge
+          <a href="#why-apexcv" className="hover:text-white transition-colors">
+            Why ApexCV
           </a>
         </nav>
 
@@ -190,7 +190,7 @@ export default function LandingPage() {
                 <span className="w-3 h-3 rounded-full bg-rose-500/80 inline-block" />
                 <span className="w-3 h-3 rounded-full bg-amber-500/80 inline-block" />
                 <span className="w-3 h-3 rounded-full bg-emerald-500/80 inline-block" />
-                <span className="ml-2 font-mono text-[11px] text-slate-500">cvforge.app/editor/live</span>
+                <span className="ml-2 font-mono text-[11px] text-slate-500">apexcv.app/editor/live</span>
               </div>
               <div className="flex items-center gap-2 text-[11px] font-semibold text-emerald-400">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -578,9 +578,9 @@ export default function LandingPage() {
       <footer className="border-t border-slate-900 py-8 px-4 sm:px-8 text-center text-xs text-slate-500">
         <div className="flex items-center justify-center gap-2 mb-2">
           <Sparkles className="w-4 h-4 text-sky-400" />
-          <span className="font-bold text-slate-300">CVForge</span>
+          <span className="font-bold text-slate-300">ApexCV</span>
         </div>
-        <p>© {new Date().getFullYear()} CVForge. All rights reserved. High-impact CV and Resume Platform.</p>
+        <p>© {new Date().getFullYear()} ApexCV. All rights reserved. High-impact CV and Resume Platform.</p>
       </footer>
     </div>
   );

@@ -218,7 +218,7 @@ export default function DashboardPage() {
               <Sparkles className="w-5 h-5 text-slate-950 stroke-[2.5]" />
             </div>
             <span className="font-extrabold text-lg tracking-tight text-white flex items-center gap-1.5">
-              CVForge
+              ApexCV
               <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
                 PRO
               </span>
