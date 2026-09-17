@@ -8,8 +8,11 @@ let dbInstance: DatabaseSync | null = null;
 
 export function getDb(): DatabaseSync {
   if (!dbInstance) {
-    const dbDir = process.cwd();
-    const dbPath = path.join(dbDir, "cv_builder.db");
+    const dbPath = process.env.DB_PATH || path.join(process.cwd(), "cv_builder.db");
+    const parentDir = path.dirname(dbPath);
+    if (!fs.existsSync(parentDir)) {
+      fs.mkdirSync(parentDir, { recursive: true });
+    }
     dbInstance = new DatabaseSync(dbPath);
 
     // Initialize tables

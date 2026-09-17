@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  cv-builder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cvforge-app
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DB_PATH=/app/data/cv_builder.db
+    volumes:
+      - cv_data:/app/data
+
+volumes:
+  cv_data:
+    driver: local

@@ -82,8 +82,14 @@ body {
     margin: 0 !important;
     padding: 0 !important;
     width: 210mm !important;
-    height: 297mm !important;
+    height: auto !important;
     overflow: visible !important;
+  }
+
+  /* Reset all flex/overflow containers */
+  div, main, section {
+    overflow: visible !important;
+    max-height: none !important;
   }
 
   /* Hide everything except CV sheet */
@@ -96,8 +102,8 @@ body {
     display: none !important;
   }
 
-  /* Reset layout containers */
-  main, .cv-preview-container, .cv-zoom-wrapper {
+  /* Reset preview wrappers */
+  .cv-preview-container, .cv-zoom-wrapper {
     margin: 0 !important;
     padding: 0 !important;
     transform: none !important;
@@ -114,7 +120,7 @@ body {
     box-shadow: none !important;
     border: none !important;
     margin: 0 !important;
-    padding: 12mm 14mm !important;
+    padding: 10mm 12mm !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     page-break-after: always;
