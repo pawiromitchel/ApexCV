@@ -1,0 +1,127 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #090d16;
+  --foreground: #f1f5f9;
+  --font-inter: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-inter);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Tactile micro-interactions */
+.interactive-lift {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.interactive-lift:hover {
+  transform: translateY(-2px);
+}
+
+/* Glassmorphism card */
+.glass-panel {
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(51, 65, 85, 0.5);
+}
+
+/* CV Document Sheet (Screen View) */
+.cv-sheet {
+  width: 210mm;
+  min-height: 297mm;
+  background-color: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  position: relative;
+  transition: all 0.2s ease-in-out;
+  transform-origin: top center;
+}
+
+/* PRINT ENGINE - PIXEL-PERFECT VECTOR EXPORT */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    overflow: visible !important;
+  }
+
+  /* Hide everything except CV sheet */
+  header,
+  nav,
+  aside,
+  footer,
+  .no-print,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Reset layout containers */
+  main, .cv-preview-container, .cv-zoom-wrapper {
+    margin: 0 !important;
+    padding: 0 !important;
+    transform: none !important;
+    box-shadow: none !important;
+    width: 210mm !important;
+    height: auto !important;
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  .cv-sheet {
+    width: 210mm !important;
+    min-height: 297mm !important;
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 12mm 14mm !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    page-break-after: always;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
