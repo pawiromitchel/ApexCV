@@ -18,6 +18,9 @@ import {
   ArrowRight,
   ExternalLink,
   Search,
+  FileUp,
+  Upload,
+  Loader2,
 } from "lucide-react";
 
 const templates: Array<{ id: TemplateId; name: string; tag: string }> = [
@@ -36,15 +39,52 @@ export default function DashboardPage() {
 
   // Create CV Modal State
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createMode, setCreateMode] = useState<"scratch" | "import">("scratch");
   const [newTitle, setNewTitle] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateId>("modern-tech");
   const [useSample, setUseSample] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isParsingPdf, setIsParsingPdf] = useState(false);
+  const [parseError, setParseError] = useState<string | null>(null);
 
   // User Profile / Claim State
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [userName, setUserName] = useState("");
   const [savedName, setSavedName] = useState<string | null>(null);
+
+  const handlePdfUpload = async (file: File) => {
+    if (!file || !file.name.endsWith(".pdf")) {
+      setParseError("Please select a valid .pdf document.");
+      return;
+    }
+
+    try {
+      setIsParsingPdf(true);
+      setParseError(null);
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("save", "true");
+
+      const res = await fetch("/api/resumes/parse-pdf", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await res.json();
+      if (result.success && result.resume) {
+        setShowCreateModal(false);
+        router.push(`/app/${result.resume.id}`);
+      } else {
+        setParseError(result.error || "Failed to parse PDF resume.");
+      }
+    } catch (err: any) {
+      console.error("PDF upload failed:", err);
+      setParseError(err?.message || "An error occurred during PDF parsing.");
+    } finally {
+      setIsParsingPdf(false);
+    }
+  };
 
   // Load saved profile name from localStorage
   useEffect(() => {
@@ -209,6 +249,19 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={() => {
+              setCreateMode("import");
+              setShowCreateModal(true);
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-200 hover:text-white text-xs font-semibold transition-all"
+          >
+            <FileUp className="w-3.5 h-3.5 text-sky-400" />
+            <span className="hidden sm:inline">Import PDF</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setCreateMode("scratch");
               setNewTitle("My Professional Resume");
               setShowCreateModal(true);
             }}
@@ -346,13 +399,13 @@ export default function DashboardPage() {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="w-full max-w-lg rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl p-6 sm:p-7 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-extrabold text-white">
-                  Create New CV
+                  Create or Import CV
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Give your resume a name and pick a starting template.
+                  Start fresh with a template or upload an existing PDF to auto-fill.
                 </p>
               </div>
               <button
@@ -364,82 +417,172 @@ export default function DashboardPage() {
               </button>
             </div>
 
-            <form onSubmit={handleCreateCv} className="space-y-4">
-              <div>
-                <label className="text-xs font-bold text-slate-300 block mb-1.5">
-                  Resume Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="e.g. Senior Software Engineer - Stripe"
-                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
-                />
-              </div>
+            {/* Mode Switcher Tabs */}
+            <div className="grid grid-cols-2 gap-1 p-1 bg-slate-950 rounded-xl border border-slate-800 mb-4">
+              <button
+                type="button"
+                onClick={() => setCreateMode("scratch")}
+                className={`py-2 text-xs font-bold rounded-lg transition-all ${
+                  createMode === "scratch"
+                    ? "bg-slate-800 text-white shadow-sm"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                Build from Template
+              </button>
+              <button
+                type="button"
+                onClick={() => setCreateMode("import")}
+                className={`py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all ${
+                  createMode === "import"
+                    ? "bg-slate-800 text-sky-400 shadow-sm"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <FileUp className="w-3.5 h-3.5" />
+                <span>Import from PDF</span>
+              </button>
+            </div>
 
-              <div>
-                <label className="text-xs font-bold text-slate-300 block mb-2">
-                  Choose Starting Template
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {templates.map((tmpl) => (
-                    <button
-                      key={tmpl.id}
-                      type="button"
-                      onClick={() => setSelectedTemplate(tmpl.id)}
-                      className={`p-3 rounded-xl border text-left text-xs transition-all ${
-                        selectedTemplate === tmpl.id
-                          ? "bg-slate-800 border-sky-500 text-white ring-1 ring-sky-500"
-                          : "bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700"
-                      }`}
-                    >
-                      <div className="font-bold text-white">{tmpl.name}</div>
-                      <div className="text-[10px] text-sky-400 font-semibold mt-0.5">
-                        {tmpl.tag}
+            {createMode === "import" ? (
+              /* PDF Upload Dropzone */
+              <div className="space-y-4">
+                {parseError && (
+                  <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs">
+                    {parseError}
+                  </div>
+                )}
+
+                <div
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) handlePdfUpload(file);
+                  }}
+                  className="p-8 border-2 border-dashed border-slate-700 hover:border-sky-500 rounded-2xl bg-slate-950/60 flex flex-col items-center justify-center text-center transition-colors cursor-pointer group"
+                  onClick={() => {
+                    document.getElementById("modal-pdf-file-input")?.click();
+                  }}
+                >
+                  <input
+                    id="modal-pdf-file-input"
+                    type="file"
+                    accept="application/pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handlePdfUpload(file);
+                    }}
+                  />
+
+                  {isParsingPdf ? (
+                    <div className="flex flex-col items-center gap-3 py-4">
+                      <Loader2 className="w-8 h-8 text-sky-400 animate-spin" />
+                      <div className="text-xs font-bold text-slate-200">
+                        Analyzing and parsing your resume...
                       </div>
-                    </button>
-                  ))}
+                      <p className="text-[11px] text-slate-400">
+                        Extracting contact info, work history, education, and skills.
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-sky-400 group-hover:scale-110 transition-transform mb-3">
+                        <Upload className="w-6 h-6" />
+                      </div>
+                      <div className="text-xs font-bold text-white mb-1">
+                        Click to upload or drag & drop your PDF
+                      </div>
+                      <p className="text-[11px] text-slate-400 max-w-xs mb-3">
+                        Supports standard resume PDFs. Text and sections will be extracted automatically.
+                      </p>
+                      <span className="px-3.5 py-1.5 rounded-xl bg-slate-800 group-hover:bg-sky-500 group-hover:text-slate-950 text-xs font-bold text-slate-300 transition-all">
+                        Select PDF Document
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
-
-              {/* Sample Data Toggle */}
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+            ) : (
+              /* Scratch / Template Form */
+              <form onSubmit={handleCreateCv} className="space-y-4">
                 <div>
-                  <div className="text-xs font-bold text-slate-200">
-                    Pre-fill with Sample Data
-                  </div>
-                  <div className="text-[11px] text-slate-400">
-                    Recommended: Starts with realistic experience & skills you can easily replace.
+                  <label className="text-xs font-bold text-slate-300 block mb-1.5">
+                    Resume Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    placeholder="e.g. Senior Software Engineer - Stripe"
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-2">
+                    Choose Starting Template
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {templates.map((tmpl) => (
+                      <button
+                        key={tmpl.id}
+                        type="button"
+                        onClick={() => setSelectedTemplate(tmpl.id)}
+                        className={`p-3 rounded-xl border text-left text-xs transition-all ${
+                          selectedTemplate === tmpl.id
+                            ? "bg-slate-800 border-sky-500 text-white ring-1 ring-sky-500"
+                            : "bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700"
+                        }`}
+                      >
+                        <div className="font-bold text-white">{tmpl.name}</div>
+                        <div className="text-[10px] text-sky-400 font-semibold mt-0.5">
+                          {tmpl.tag}
+                        </div>
+                      </button>
+                    ))}
                   </div>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={useSample}
-                  onChange={(e) => setUseSample(e.target.checked)}
-                  className="rounded border-slate-700 text-sky-500 focus:ring-sky-500 bg-slate-900 w-4 h-4"
-                />
-              </div>
 
-              <div className="pt-3 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting || !newTitle.trim()}
-                  className="px-5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-slate-950 text-xs font-bold transition-all shadow-md shadow-sky-500/20 flex items-center gap-1.5"
-                >
-                  <span>{isSubmitting ? "Creating..." : "Start Building"}</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </form>
+                {/* Sample Data Toggle */}
+                <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-slate-200">
+                      Pre-fill with Sample Data
+                    </div>
+                    <div className="text-[11px] text-slate-400">
+                      Recommended: Starts with realistic experience & skills you can easily replace.
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={useSample}
+                    onChange={(e) => setUseSample(e.target.checked)}
+                    className="rounded border-slate-700 text-sky-500 focus:ring-sky-500 bg-slate-900 w-4 h-4"
+                  />
+                </div>
+
+                <div className="pt-3 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateModal(false)}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || !newTitle.trim()}
+                    className="px-5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-slate-950 text-xs font-bold transition-all shadow-md shadow-sky-500/20 flex items-center gap-1.5"
+                  >
+                    <span>{isSubmitting ? "Creating..." : "Start Building"}</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
