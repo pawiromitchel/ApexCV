@@ -1,149 +1,100 @@
 "use client";
 
 import React from "react";
+import { AnimatePresence } from "motion/react";
+import { Award, Plus } from "lucide-react";
 import { CertificationItem } from "@/lib/types";
-import { Plus, Trash2, Award } from "lucide-react";
+import { validateCertificationYear, formatMonthYear } from "@/lib/dateValidation";
+import { Input } from "@/components/ui/Input";
+import { Field } from "@/components/ui/Field";
+import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { MonthYearPicker } from "@/components/ui/MonthYearPicker";
+import { ItemCard, SectionHeader } from "../ItemCard";
+import { useItemAccordion } from "../EditorContext";
+import { moveItem, newId } from "./listUtils";
 
 interface CertificationsFormProps {
   certifications: CertificationItem[];
   onChange: (certifications: CertificationItem[]) => void;
 }
 
-export function CertificationsForm({
-  certifications,
-  onChange,
-}: CertificationsFormProps) {
-  const handleAdd = () => {
-    const newItem: CertificationItem = {
-      id: `cert_${Date.now()}`,
-      name: "",
-      issuer: "",
-      date: "",
-      url: "",
-    };
-    onChange([...certifications, newItem]);
-  };
+export function CertificationsForm({ certifications, onChange }: CertificationsFormProps) {
+  const accordion = useItemAccordion(certifications);
+  const update = (id: string, patch: Partial<CertificationItem>) =>
+    onChange(certifications.map((item) => (item.id === id ? { ...item, ...patch } : item)));
 
-  const handleUpdate = (id: string, updated: Partial<CertificationItem>) => {
-    onChange(
-      certifications.map((item) => (item.id === id ? { ...item, ...updated } : item))
-    );
-  };
-
-  const handleDelete = (id: string) => {
-    onChange(certifications.filter((item) => item.id !== id));
+  const add = () => {
+    const id = newId("cert");
+    onChange([...certifications, { id, name: "", issuer: "", date: "", url: "", visible: true }]);
+    accordion.openAndFocus(id);
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            Certifications & Licenses ({certifications.length})
-          </h3>
-          <p className="text-[11px] text-slate-500">
-            Industry accreditations, cloud certificates, or professional awards.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={handleAdd}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 active:scale-95 text-slate-950 text-xs font-bold transition-all"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Add Certification</span>
-        </button>
-      </div>
+      <SectionHeader
+        title="Certifications"
+        description="Licences, certificates, and awards."
+        actions={
+          <Button variant="outline" size="sm" onClick={add}>
+            <Plus className="h-3.5 w-3.5" /> Add certification
+          </Button>
+        }
+      />
 
       {certifications.length === 0 ? (
-        <div className="p-8 text-center border border-dashed border-slate-800 rounded-2xl bg-slate-900/40">
-          <Award className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-          <p className="text-xs font-semibold text-slate-400">No certifications added yet</p>
-          <button
-            type="button"
-            onClick={handleAdd}
-            className="mt-3 text-xs font-bold text-sky-400 hover:underline"
-          >
-            + Add accreditation
-          </button>
-        </div>
+        <EmptyState
+          icon={<Award />}
+          title="No certifications yet"
+          action={
+            <Button variant="primary" onClick={add}>
+              <Plus className="h-4 w-4" /> Add a certification
+            </Button>
+          }
+        />
       ) : (
-        <div className="space-y-3">
-          {certifications.map((item) => (
-            <div
-              key={item.id}
-              className="p-4 rounded-2xl border border-slate-800 bg-slate-900/60 space-y-3"
-            >
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-slate-200">
-                  {item.name || "Certification Name"}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(item.id)}
-                  className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-colors"
+        <div className="space-y-2.5">
+          <AnimatePresence initial={false}>
+            {certifications.map((item, index) => {
+              const dateCheck = item.date ? validateCertificationYear(item.date) : { isValid: true, message: "" };
+              return (
+                <ItemCard
+                  key={item.id}
+                  id={item.id}
+                  index={index}
+                  total={certifications.length}
+                  noun="certification"
+                  title={item.name || "Untitled certification"}
+                  subtitle={[item.issuer, formatMonthYear(item.date)].filter(Boolean).join(" · ") || "Add issuer and date"}
+                  hidden={item.visible === false}
+                  open={accordion.isOpen(item.id)}
+                  onToggle={() => accordion.toggle(item.id)}
+                  onMove={(dir) => onChange(moveItem(certifications, index, dir))}
+                  onToggleHidden={() => update(item.id, { visible: item.visible === false })}
+                  onDelete={() => onChange(certifications.filter((c) => c.id !== item.id))}
+                  focusRequested={accordion.focusId === item.id}
+                  onFocused={accordion.clearFocus}
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[11px] font-bold text-slate-300 block mb-1">
-                    Certification Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={item.name}
-                    onChange={(e) => handleUpdate(item.id, { name: e.target.value })}
-                    placeholder="e.g. AWS Certified Solutions Architect"
-                    className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-sky-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-bold text-slate-300 block mb-1">
-                    Issuing Organization *
-                  </label>
-                  <input
-                    type="text"
-                    value={item.issuer}
-                    onChange={(e) => handleUpdate(item.id, { issuer: e.target.value })}
-                    placeholder="e.g. Amazon Web Services"
-                    className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-sky-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[11px] font-bold text-slate-300 block mb-1">
-                    Year / Date Received
-                  </label>
-                  <input
-                    type="text"
-                    value={item.date}
-                    onChange={(e) => handleUpdate(item.id, { date: e.target.value })}
-                    placeholder="e.g. 2023"
-                    className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-sky-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-bold text-slate-300 block mb-1">
-                    Verification URL (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={item.url || ""}
-                    onChange={(e) => handleUpdate(item.id, { url: e.target.value })}
-                    placeholder="https://..."
-                    className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-sky-500"
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <Field label="Name" required error={!item.name?.trim() && item.issuer?.trim() ? "Needed for it to appear on your CV" : undefined}>
+                      {(p) => <Input {...p} value={item.name} onChange={(e) => update(item.id, { name: e.target.value })} placeholder="e.g. Google UX Design Certificate" />}
+                    </Field>
+                    <Field label="Issued by">
+                      {(p) => <Input {...p} value={item.issuer} onChange={(e) => update(item.id, { issuer: e.target.value })} placeholder="e.g. Coursera" />}
+                    </Field>
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <Field label="Date" error={!dateCheck.isValid ? dateCheck.message : undefined}>
+                      {(p) => <MonthYearPicker id={p.id} label="Date" value={item.date} onChange={(v) => update(item.id, { date: v })} />}
+                    </Field>
+                    <Field label="Verification link">
+                      {(p) => <Input {...p} type="url" value={item.url || ""} onChange={(e) => update(item.id, { url: e.target.value })} placeholder="https://… (optional)" />}
+                    </Field>
+                  </div>
+                </ItemCard>
+              );
+            })}
+          </AnimatePresence>
         </div>
       )}
     </div>

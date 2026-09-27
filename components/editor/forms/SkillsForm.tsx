@@ -1,188 +1,205 @@
 "use client";
 
 import React, { useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { Check, Plus, Sparkles, X } from "lucide-react";
 import { SkillItem } from "@/lib/types";
-import { Plus, X, Sparkles, PlusCircle } from "lucide-react";
+import { DEFAULT_SKILL_CATEGORIES, QUICK_SKILL_SUGGESTIONS, getCategoryForSkill } from "@/lib/skillTaxonomy";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
+import { Button } from "@/components/ui/Button";
+import { Menu, MenuItem, MenuLabel, MenuSeparator } from "@/components/ui/Popover";
+import { spring } from "@/lib/motion";
+import { SectionHeader } from "../ItemCard";
+import { newId } from "./listUtils";
 
 interface SkillsFormProps {
   skills: SkillItem[];
   onChange: (skills: SkillItem[]) => void;
 }
 
-const quickSuggestions = [
-  "TypeScript",
-  "React",
-  "Next.js",
-  "Node.js",
-  "Python",
-  "Go",
-  "PostgreSQL",
-  "Redis",
-  "Docker",
-  "Kubernetes",
-  "AWS",
-  "Tailwind CSS",
-  "GraphQL",
-  "REST APIs",
-  "System Architecture",
-  "CI/CD Pipelines",
-  "Agile / Scrum",
-  "Team Leadership",
-];
+const DEFAULT_CATEGORY = "Professional Skills";
+const normalizeCategory = (c?: string) => (!c ? DEFAULT_CATEGORY : c === "Languages" ? "Programming Languages" : c);
 
 export function SkillsForm({ skills, onChange }: SkillsFormProps) {
-  const [newSkillName, setNewSkillName] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("Technical Skills");
+  const [draft, setDraft] = useState("");
+  const [category, setCategory] = useState(DEFAULT_CATEGORY);
+  const [categoryTouched, setCategoryTouched] = useState(false);
 
-  // Get distinct categories
-  const categories = Array.from(
-    new Set([...skills.map((s) => s.category || "Technical Skills"), "Technical Skills", "Languages", "Tools & Cloud", "Soft Skills"])
-  );
+  const categories = Array.from(new Set([...DEFAULT_SKILL_CATEGORIES, ...skills.map((s) => normalizeCategory(s.category))]));
 
-  const handleAddSkill = (nameToAdd?: string) => {
-    const name = (nameToAdd || newSkillName).trim();
-    if (!name) return;
+  const add = (name: string, forcedCategory?: string) => {
+    const clean = name.trim();
+    if (!clean || skills.some((s) => s.name.toLowerCase() === clean.toLowerCase())) return false;
+    onChange([...skills, { id: newId("sk"), name: clean, category: forcedCategory || category, level: 5 }]);
+    return true;
+  };
 
-    // Check if skill already exists
-    if (skills.some((s) => s.name.toLowerCase() === name.toLowerCase())) {
-      setNewSkillName("");
-      return;
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Allow pasting "Figma, Sketch, Miro" in one go
+    const parts = draft.split(",").map((p) => p.trim()).filter(Boolean);
+    const next = [...skills];
+    for (const part of parts) {
+      if (next.some((s) => s.name.toLowerCase() === part.toLowerCase())) continue;
+      next.push({ id: newId("sk"), name: part, category: categoryTouched ? category : getCategoryForSkill(part) || category, level: 5 });
     }
-
-    const newSkill: SkillItem = {
-      id: `sk_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-      name,
-      category: selectedCategory,
-      level: 5,
-    };
-
-    onChange([...skills, newSkill]);
-    if (!nameToAdd) setNewSkillName("");
+    if (next.length !== skills.length) onChange(next);
+    setDraft("");
+    setCategoryTouched(false);
   };
 
-  const handleRemoveSkill = (id: string) => {
-    onChange(skills.filter((s) => s.id !== id));
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleAddSkill();
-    }
-  };
-
-  // Group current skills
-  const skillsByCategory = skills.reduce((acc, s) => {
-    const cat = s.category || "Technical Skills";
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(s);
+  const grouped = skills.reduce<Record<string, SkillItem[]>>((acc, s) => {
+    const c = normalizeCategory(s.category);
+    (acc[c] ||= []).push(s);
     return acc;
-  }, {} as Record<string, SkillItem[]>);
+  }, {});
+
+  const suggestions = QUICK_SKILL_SUGGESTIONS.filter((s) => !skills.some((k) => k.name.toLowerCase() === s.name.toLowerCase())).slice(0, 12);
 
   return (
     <div className="space-y-5">
-      <div>
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
-          Skills & Technologies ({skills.length})
-        </h3>
-        <p className="text-[11px] text-slate-500">
-          Highlight your tech stack and core competencies. Group them into categories for maximum readability.
-        </p>
-      </div>
+      <SectionHeader title="Skills" description="Tools, methods, and strengths that match the roles you want." />
 
-      {/* Add Skill Row */}
-      <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            value={newSkillName}
-            onChange={(e) => setNewSkillName(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type skill (e.g. Next.js, Rust, Kafka)..."
-            className="flex-1 px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+      <form onSubmit={submit} className="space-y-3 rounded-2xl border border-line bg-surface p-4">
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Input
+            aria-label="Skill name"
+            value={draft}
+            onChange={(e) => {
+              setDraft(e.target.value);
+              if (!categoryTouched && e.target.value.trim().length >= 3) {
+                const auto = getCategoryForSkill(e.target.value);
+                if (auto) setCategory(auto);
+              }
+            }}
+            placeholder="Add a skill, or several separated by commas"
+            className="flex-1"
           />
-
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-sky-500"
-          >
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-
-          <button
-            type="button"
-            onClick={() => handleAddSkill()}
-            className="px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 active:scale-95 text-slate-950 text-xs font-bold transition-all flex items-center gap-1"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add</span>
-          </button>
-        </div>
-
-        {/* Quick Suggestion Chips */}
-        <div>
-          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-emerald-400" />
-            <span>Quick Suggestions (click to add)</span>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {quickSuggestions.map((suggestion) => {
-              const alreadyAdded = skills.some(
-                (s) => s.name.toLowerCase() === suggestion.toLowerCase()
-              );
-              if (alreadyAdded) return null;
-
-              return (
-                <button
-                  key={suggestion}
-                  type="button"
-                  onClick={() => handleAddSkill(suggestion)}
-                  className="text-[11px] px-2 py-0.5 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 hover:border-slate-700 transition-colors"
-                >
-                  + {suggestion}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Grouped Skills List */}
-      <div className="space-y-4">
-        {Object.entries(skillsByCategory).map(([category, items]) => (
-          <div key={category} className="p-3.5 rounded-2xl bg-slate-900/50 border border-slate-800/80">
-            <div className="text-xs font-bold text-slate-300 mb-2.5 flex items-center justify-between">
-              <span>{category}</span>
-              <span className="text-[10px] font-mono text-slate-500">
-                {items.length} skills
-              </span>
-            </div>
-
-            <div className="flex flex-wrap gap-1.5">
-              {items.map((skill) => (
-                <span
-                  key={skill.id}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-800/80 border border-slate-700 text-xs text-slate-200"
-                >
-                  <span>{skill.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveSkill(skill.id)}
-                    className="text-slate-400 hover:text-rose-400 transition-colors"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
+          <div className="flex gap-2">
+            <Select
+              aria-label="Category"
+              value={category}
+              onChange={(e) => {
+                setCategory(e.target.value);
+                setCategoryTouched(true);
+              }}
+              className="min-w-0 flex-1 sm:w-48 sm:flex-none"
+            >
+              {categories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
               ))}
+            </Select>
+            <Button type="submit" variant="primary" disabled={!draft.trim()}>
+              <Plus className="h-4 w-4" /> Add
+            </Button>
+          </div>
+        </div>
+
+        {suggestions.length > 0 && (
+          <div>
+            <p className="mb-1.5 flex items-center gap-1 text-xs text-fg-subtle">
+              <Sparkles className="h-3 w-3" /> Suggestions
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              <AnimatePresence initial={false}>
+                {suggestions.map((s) => (
+                  <motion.button
+                    key={s.name}
+                    layout
+                    type="button"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    whileTap={{ scale: 0.94 }}
+                    onClick={() => add(s.name, s.category)}
+                    title={`Add to ${s.category}`}
+                    className="inline-flex h-7 items-center gap-1 rounded-full border border-line bg-surface px-2.5 text-[13px] text-fg-secondary transition-colors hover:border-primary/50 hover:text-primary"
+                  >
+                    <Plus className="h-3 w-3" /> {s.name}
+                  </motion.button>
+                ))}
+              </AnimatePresence>
             </div>
           </div>
-        ))}
-      </div>
+        )}
+      </form>
+
+      {skills.length === 0 ? (
+        <p className="rounded-2xl border border-dashed border-line-strong px-4 py-6 text-center text-[13px] text-fg-muted">
+          Your skills will appear here, grouped by category.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          <AnimatePresence initial={false}>
+            {Object.entries(grouped).map(([cat, items]) => (
+              <motion.div
+                key={cat}
+                layout
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={spring.smooth}
+                className="rounded-2xl border border-line bg-surface p-4"
+              >
+                <div className="mb-2.5 flex items-center justify-between">
+                  <p className="text-[13px] font-semibold text-fg">{cat}</p>
+                  <span className="text-xs tabular-nums text-fg-subtle">{items.length}</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  <AnimatePresence initial={false}>
+                    {items.map((skill) => (
+                      <motion.span
+                        key={skill.id}
+                        layout
+                        initial={{ opacity: 0, scale: 0.85 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={spring.snappy}
+                        className="inline-flex h-8 items-center rounded-lg bg-surface-2 text-[13px] text-fg"
+                      >
+                        <Menu
+                          ariaLabel={`Options for ${skill.name}`}
+                          trigger={(props) => (
+                            <button {...props} type="button" className="h-full rounded-l-lg pl-2.5 pr-1.5 hover:text-primary" title="Move to another category">
+                              {skill.name}
+                            </button>
+                          )}
+                        >
+                          <MenuLabel>Move to</MenuLabel>
+                          {categories.map((c) => (
+                            <MenuItem
+                              key={c}
+                              icon={normalizeCategory(skill.category) === c ? <Check /> : <span />}
+                              onSelect={() => onChange(skills.map((s) => (s.id === skill.id ? { ...s, category: c } : s)))}
+                            >
+                              {c}
+                            </MenuItem>
+                          ))}
+                          <MenuSeparator />
+                          <MenuItem destructive icon={<X />} onSelect={() => onChange(skills.filter((s) => s.id !== skill.id))}>
+                            Remove
+                          </MenuItem>
+                        </Menu>
+                        <button
+                          type="button"
+                          aria-label={`Remove ${skill.name}`}
+                          onClick={() => onChange(skills.filter((s) => s.id !== skill.id))}
+                          className="flex h-full items-center rounded-r-lg pl-0.5 pr-2 text-fg-subtle transition-colors hover:text-danger"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </motion.span>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
     </div>
   );
 }

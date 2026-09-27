@@ -2,13 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { listResumes, upsertResume } from "@/lib/db";
 import { ResumeData } from "@/lib/types";
 import { emptyResumeData, initialResumeData } from "@/lib/sampleData";
+import { getOrCreateDeviceId, attachDeviceIdCookie } from "@/lib/deviceAuth";
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId") || undefined;
-    const resumes = listResumes(userId);
-    return NextResponse.json({ success: true, resumes });
+    const { deviceId, isNew } = getOrCreateDeviceId(request);
+    const resumes = listResumes(deviceId);
+    const response = NextResponse.json({ success: true, resumes, deviceId });
+    if (isNew) {
+      attachDeviceIdCookie(response, deviceId);
+    }
+    return response;
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error?.message || "Failed to list resumes" },
@@ -19,8 +23,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const { deviceId, isNew } = getOrCreateDeviceId(request);
     const body = await request.json();
-    const { title, templateId, userId, useSample } = body;
+    const { title, templateId, useSample } = body;
 
     const newId = `cv_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const baseData = useSample ? JSON.parse(JSON.stringify(initialResumeData)) : JSON.parse(JSON.stringify(emptyResumeData));
@@ -28,7 +33,7 @@ export async function POST(request: NextRequest) {
     const resume: ResumeData = {
       ...baseData,
       id: newId,
-      userId: userId || undefined,
+      userId: deviceId,
       title: title || (useSample ? "Alex Rivera - Resume" : "Untitled Resume"),
       themeConfig: {
         ...baseData.themeConfig,
@@ -38,9 +43,13 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date().toISOString(),
     };
 
-    upsertResume(resume);
+    upsertResume(resume, deviceId);
 
-    return NextResponse.json({ success: true, resume }, { status: 201 });
+    const response = NextResponse.json({ success: true, resume }, { status: 201 });
+    if (isNew) {
+      attachDeviceIdCookie(response, deviceId);
+    }
+    return response;
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error?.message || "Failed to create resume" },

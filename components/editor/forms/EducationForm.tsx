@@ -1,8 +1,18 @@
 "use client";
 
 import React from "react";
+import { AnimatePresence } from "motion/react";
+import { GraduationCap, Plus } from "lucide-react";
 import { EducationItem } from "@/lib/types";
-import { Plus, Trash2, GraduationCap } from "lucide-react";
+import { validateEducationDates, formatMonthYear } from "@/lib/dateValidation";
+import { Input } from "@/components/ui/Input";
+import { Field } from "@/components/ui/Field";
+import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { MonthYearPicker } from "@/components/ui/MonthYearPicker";
+import { ItemCard, SectionHeader } from "../ItemCard";
+import { useItemAccordion } from "../EditorContext";
+import { moveItem, newId } from "./listUtils";
 
 interface EducationFormProps {
   education: EducationItem[];
@@ -10,181 +20,94 @@ interface EducationFormProps {
 }
 
 export function EducationForm({ education, onChange }: EducationFormProps) {
-  const handleAddEducation = () => {
-    const newItem: EducationItem = {
-      id: `edu_${Date.now()}`,
-      degree: "",
-      institution: "",
-      location: "",
-      startDate: "",
-      endDate: "",
-      gpa: "",
-      honors: "",
-    };
-    onChange([...education, newItem]);
-  };
+  const accordion = useItemAccordion(education);
+  const update = (id: string, patch: Partial<EducationItem>) =>
+    onChange(education.map((item) => (item.id === id ? { ...item, ...patch } : item)));
 
-  const handleUpdate = (id: string, updated: Partial<EducationItem>) => {
-    onChange(
-      education.map((item) => (item.id === id ? { ...item, ...updated } : item))
-    );
-  };
-
-  const handleDelete = (id: string) => {
-    onChange(education.filter((item) => item.id !== id));
+  const add = () => {
+    const id = newId("edu");
+    onChange([...education, { id, degree: "", institution: "", location: "", startDate: "", endDate: "", gpa: "", honors: "", visible: true }]);
+    accordion.openAndFocus(id);
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            Education ({education.length})
-          </h3>
-          <p className="text-[11px] text-slate-500">
-            Degrees, certifications, and academic background.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={handleAddEducation}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 active:scale-95 text-slate-950 text-xs font-bold transition-all"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Add Education</span>
-        </button>
-      </div>
+      <SectionHeader
+        title="Education"
+        description="Degrees, diplomas, bootcamps, and relevant courses."
+        actions={
+          <Button variant="outline" size="sm" onClick={add}>
+            <Plus className="h-3.5 w-3.5" /> Add education
+          </Button>
+        }
+      />
 
       {education.length === 0 ? (
-        <div className="p-8 text-center border border-dashed border-slate-800 rounded-2xl bg-slate-900/40">
-          <GraduationCap className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-          <p className="text-xs font-semibold text-slate-400">No education entries yet</p>
-          <button
-            type="button"
-            onClick={handleAddEducation}
-            className="mt-3 text-xs font-bold text-sky-400 hover:underline"
-          >
-            + Add degree or school
-          </button>
-        </div>
+        <EmptyState
+          icon={<GraduationCap />}
+          title="No education yet"
+          description="Add your highest or most relevant qualification first."
+          action={
+            <Button variant="primary" onClick={add}>
+              <Plus className="h-4 w-4" /> Add education
+            </Button>
+          }
+        />
       ) : (
-        <div className="space-y-3">
-          {education.map((item) => (
-            <div
-              key={item.id}
-              className="p-4 rounded-2xl border border-slate-800 bg-slate-900/60 space-y-3"
-            >
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-slate-200">
-                  {item.degree || "Degree"}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(item.id)}
-                  className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-colors"
+        <div className="space-y-2.5">
+          <AnimatePresence initial={false}>
+            {education.map((item, index) => {
+              const dates = validateEducationDates(item.startDate, item.endDate);
+              const end = formatMonthYear(item.endDate);
+              return (
+                <ItemCard
+                  key={item.id}
+                  id={item.id}
+                  index={index}
+                  total={education.length}
+                  noun="education entry"
+                  title={item.degree || "Untitled degree"}
+                  subtitle={[item.institution, end].filter(Boolean).join(" · ") || "Add school and dates"}
+                  hidden={item.visible === false}
+                  open={accordion.isOpen(item.id)}
+                  onToggle={() => accordion.toggle(item.id)}
+                  onMove={(dir) => onChange(moveItem(education, index, dir))}
+                  onToggleHidden={() => update(item.id, { visible: item.visible === false })}
+                  onDelete={() => onChange(education.filter((e) => e.id !== item.id))}
+                  focusRequested={accordion.focusId === item.id}
+                  onFocused={accordion.clearFocus}
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[11px] font-bold text-slate-300 block mb-1">
-                    Degree / Field of Study *
-                  </label>
-                  <input
-                    type="text"
-                    value={item.degree}
-                    onChange={(e) => handleUpdate(item.id, { degree: e.target.value })}
-                    placeholder="e.g. B.S. in Computer Science"
-                    className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-sky-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-bold text-slate-300 block mb-1">
-                    Institution / University *
-                  </label>
-                  <input
-                    type="text"
-                    value={item.institution}
-                    onChange={(e) => handleUpdate(item.id, { institution: e.target.value })}
-                    placeholder="e.g. Stanford University"
-                    className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-sky-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="text-[11px] font-bold text-slate-300 block mb-1">
-                    Location
-                  </label>
-                  <input
-                    type="text"
-                    value={item.location}
-                    onChange={(e) => handleUpdate(item.id, { location: e.target.value })}
-                    placeholder="Stanford, CA"
-                    className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-sky-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-bold text-slate-300 block mb-1">
-                    Start Date
-                  </label>
-                  <input
-                    type="text"
-                    value={item.startDate}
-                    onChange={(e) => handleUpdate(item.id, { startDate: e.target.value })}
-                    placeholder="2016"
-                    className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-sky-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-bold text-slate-300 block mb-1">
-                    Graduation Date
-                  </label>
-                  <input
-                    type="text"
-                    value={item.endDate}
-                    onChange={(e) => handleUpdate(item.id, { endDate: e.target.value })}
-                    placeholder="2020"
-                    className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-sky-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[11px] font-bold text-slate-300 block mb-1">
-                    GPA (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={item.gpa || ""}
-                    onChange={(e) => handleUpdate(item.id, { gpa: e.target.value })}
-                    placeholder="3.9 / 4.0"
-                    className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-sky-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-bold text-slate-300 block mb-1">
-                    Honors & Activities
-                  </label>
-                  <input
-                    type="text"
-                    value={item.honors || ""}
-                    onChange={(e) => handleUpdate(item.id, { honors: e.target.value })}
-                    placeholder="Magna Cum Laude, Dean's List"
-                    className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-sky-500"
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <Field label="Degree or field of study" required>
+                      {(p) => <Input {...p} value={item.degree} onChange={(e) => update(item.id, { degree: e.target.value })} placeholder="e.g. BSc Computer Science" />}
+                    </Field>
+                    <Field label="School" required>
+                      {(p) => <Input {...p} value={item.institution} onChange={(e) => update(item.id, { institution: e.target.value })} placeholder="e.g. University of Amsterdam" />}
+                    </Field>
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <Field label="Start date">
+                      {(p) => <MonthYearPicker id={p.id} label="Start date" value={item.startDate} onChange={(v) => update(item.id, { startDate: v })} />}
+                    </Field>
+                    <Field label="Graduation date" error={!dates.isValid ? dates.message : undefined}>
+                      {(p) => <MonthYearPicker id={p.id} label="Graduation date" value={item.endDate} onChange={(v) => update(item.id, { endDate: v })} />}
+                    </Field>
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <Field label="Location">
+                      {(p) => <Input {...p} value={item.location} onChange={(e) => update(item.id, { location: e.target.value })} placeholder="City" />}
+                    </Field>
+                    <Field label="Grade / GPA">
+                      {(p) => <Input {...p} value={item.gpa || ""} onChange={(e) => update(item.id, { gpa: e.target.value })} placeholder="Optional" />}
+                    </Field>
+                    <Field label="Honours">
+                      {(p) => <Input {...p} value={item.honors || ""} onChange={(e) => update(item.id, { honors: e.target.value })} placeholder="Optional" />}
+                    </Field>
+                  </div>
+                </ItemCard>
+              );
+            })}
+          </AnimatePresence>
         </div>
       )}
     </div>

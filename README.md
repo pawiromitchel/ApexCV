@@ -1,24 +1,22 @@
-# ApexCV — High-Impact Resume & CV Builder
+# ApexCV
 
-ApexCV is a modern, high-performance resume and CV authoring platform built with **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS**, and **Node 22 `node:sqlite`**. It delivers split-screen live editing, five ATS-optimized templates, fluid drag-and-drop section reordering, PDF importing, and vector PDF exporting.
+ApexCV is a modern resume and CV authoring platform built with **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS**, and **Node 22 `node:sqlite`**. It features split-screen live editing, five ATS-optimized templates, drag-and-drop section reordering, PDF importing, and vector PDF exporting.
 
 ---
 
-## Key Features
+## Features
 
-- **Live Split-Screen Editing:** Instantaneous real-time preview updates as you type with zero layout lag.
-- **5 Curated Resume Templates:**
-  - **Modern Tech / Minimalist:** Tailored for engineers, product managers, and designers with skill pills and metric bullet styling.
-  - **Executive Classic:** Elegant serif typography and authoritative layout for directors, consultants, and leaders.
-  - **Creative Grid:** Dynamic top banner, portfolio highlight cards, and modern badge accents.
-  - **Compact Sidebar:** Dense 2-column layout for multi-disciplinary specialists.
-  - **Harvard / 100% ATS:** Clean, conservative structure guaranteed to parse cleanly through Workday, Taleo, and Greenhouse.
-- **Debounced SQLite Autosave:** Built with Node 22's native `DatabaseSync` (`node:sqlite`). Keystrokes are automatically debounced (800ms) and persisted locally with zero external database setup.
-- **PDF Resume Import:** Upload an existing PDF resume to automatically extract contact info, work experience, education, and technical skills using heuristics.
-- **Vector PDF Export:** Generates razor-sharp vector PDFs directly via browser print styles (`window.print()`), preserving crisp fonts and exact print margins.
-- **Dynamic Section Reordering:** Reorder sections (Experience, Education, Skills, Projects, etc.) dynamically to tailor emphasis for different roles.
-- **One-Click Duplication:** Clone any existing CV in 1 click to tailor keywords for specific job postings.
-- **Anonymous Guest & Claim Flows:** Start building immediately without an account; optionally claim guest CVs under a profile name.
+- **Live Split-Screen Editing:** Real-time preview updates alongside the editor.
+- **5 ATS-Optimized Templates:** Includes Modern Tech, Executive, Creative, Sidebar, and ATS Classic.
+- **Layout Controls:** Dynamically adjust Font Size (Small, Base, Large) and Page Margins (Compact, Standard, Spacious).
+- **Rich Text Support:** Native markdown support (`**bold**`, `*italic*`, `[links](url)`) within bullet points.
+- **Section Visibility:** Temporarily hide specific jobs or projects to tailor a CV to a specific role without deleting data.
+- **A4 Page Boundaries:** Visual dashed-line indicators in the editor to prevent unexpected PDF page-breaks.
+- **Public Share Links:** Generate read-only, shareable `/view/[id]` links to send directly to employers.
+- **PDF Resume Import:** Extract contact info, work experience, education, and technical skills from existing PDF resumes.
+- **Vector PDF Export:** High-quality, text-selectable PDF export via native browser print.
+- **Debounced SQLite Autosave:** Built with Node 22 native `node:sqlite`.
+- **Dynamic Section Reordering:** Drag and drop sections to rearrange.
 
 ---
 
@@ -72,19 +70,25 @@ npm run build
 npm run start
 ```
 
-### Docker Deployment
+## Docker Deployment
 
-ApexCV includes a multi-stage Dockerfile and Docker Compose configuration:
+ApexCV is containerized using a multi-stage Node 22 Alpine image.
+
+### Quick Start with Docker Compose
+
+To build the image and start ApexCV in detached mode:
 
 ```bash
-# Build and run with Docker Compose
-docker compose up -d
-
-# Check running container
+docker compose up -d --build
 docker compose ps
 ```
 
-The app will be accessible at [http://localhost:3001](http://localhost:3001) with database persistence mounted to the `cv_data` volume.
+### Data Persistence & SQLite Volume
+
+The embedded SQLite database (`cv_builder.db`) is stored inside `/app/data` within the container, which is mounted to a named Docker volume `apexcv_data`:
+
+- **Named Volume:** `apexcv_data`
+- **Container Path:** `/app/data/cv_builder.db`
 
 ---
 
@@ -92,40 +96,12 @@ The app will be accessible at [http://localhost:3001](http://localhost:3001) wit
 
 ```
 cv-builder/
-├── AGENTS.md                  # Comprehensive context guide for AI agents
-├── README.md                  # Project documentation
-├── Dockerfile                 # Multi-stage container build
-├── docker-compose.yml         # Containerized production runtime
-├── package.json               # NPM scripts and dependencies
-├── cv_builder.db              # Local SQLite database file
-├── app/
-│   ├── page.tsx               # Marketing landing page
-│   ├── app/
-│   │   ├── page.tsx           # Dashboard (CV list, search, create, import)
-│   │   └── [id]/page.tsx      # Editor wrapper (loads CV from SQLite)
-│   └── api/
-│       ├── resumes/           # CRUD endpoints for resumes
-│       │   ├── [id]/          # GET, PUT, DELETE
-│       │   ├── [id]/duplicate # Clone existing CV
-│       │   └── parse-pdf/     # PDF file upload & parser
-│       └── auth/claim/        # Associate guest resumes with user profile
-├── components/
-│   ├── editor/
-│   │   ├── CvEditor.tsx       # Main editor with state & autosave
-│   │   ├── SectionList.tsx    # Section ordering controls
-│   │   ├── forms/             # Forms for Personal, Experience, Skills, etc.
-│   │   └── styling/           # Theme, font, color, and spacing toolbar
-│   └── preview/
-│       ├── CvPreview.tsx      # Print-ready sheet wrapper
-│       └── templates/         # 5 ATS & executive templates
-├── lib/
-│   ├── db.ts                  # SQLite schema & database helpers
-│   ├── types.ts               # Shared TypeScript models
-│   ├── sampleData.ts          # Default seed resume data
-│   └── pdfParser.ts           # PDF text heuristic parser
-└── scripts/
-    ├── test-e2e.mjs           # Puppeteer E2E test script
-    └── test-pdf-import.mjs    # PDF import verification script
+├── app/                  # Next.js app router pages and API
+├── components/           # UI components, forms, and preview templates
+├── lib/                  # Database, types, and utilities
+├── scripts/              # Testing and automation scripts
+├── package.json          # Dependencies and scripts
+└── cv_builder.db         # Local SQLite database (created on first run)
 ```
 
 ---
@@ -134,20 +110,18 @@ cv-builder/
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/resumes` | List all resumes (optional `?userId=...`) |
-| `POST` | `/api/resumes` | Create a new resume (empty or seeded) |
-| `GET` | `/api/resumes/:id` | Fetch full resume JSON by ID |
-| `PUT` | `/api/resumes/:id` | Update / autosave resume JSON |
+| `GET` | `/api/resumes` | List all resumes |
+| `POST` | `/api/resumes` | Create a new resume |
+| `GET` | `/api/resumes/:id` | Fetch resume JSON by ID |
+| `PUT` | `/api/resumes/:id` | Update resume JSON |
 | `DELETE` | `/api/resumes/:id` | Delete resume |
-| `POST` | `/api/resumes/:id/duplicate` | Duplicate resume with a new ID |
-| `POST` | `/api/resumes/parse-pdf` | Upload multipart PDF and extract structured data |
-| `POST` | `/api/auth/claim` | Link guest resumes to a named user |
+| `POST` | `/api/resumes/:id/duplicate` | Duplicate resume |
+| `POST` | `/api/resumes/parse-pdf` | Extract data from PDF |
+| `POST` | `/api/auth/claim` | Link guest resumes to a user |
 
 ---
 
 ## Automated Testing
-
-Headless E2E tests are configured using `puppeteer-core`. Ensure the app is running on `http://localhost:3001` before launching tests:
 
 ```bash
 # Start server in one terminal
@@ -164,4 +138,4 @@ node scripts/test-pdf-import.mjs
 
 ## AI Agent Integration
 
-For AI coding agents (Gemini, Antigravity, Claude, Cursor), refer to [AGENTS.md](./AGENTS.md) for architectural constraints, database guidelines, and file index.
+See [AGENTS.md](./AGENTS.md) for architectural constraints, database guidelines, and the file index.

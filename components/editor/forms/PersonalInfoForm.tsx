@@ -1,191 +1,146 @@
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { Briefcase, Github, Globe, ImagePlus, Linkedin, Mail, MapPin, Phone, Trash2, User } from "lucide-react";
 import { PersonalInfo } from "@/lib/types";
-import { User, Briefcase, Mail, Phone, MapPin, Globe, Linkedin, Github, Image as ImageIcon } from "lucide-react";
+import { Input } from "@/components/ui/Input";
+import { Field } from "@/components/ui/Field";
+import { Button } from "@/components/ui/Button";
+import { Switch } from "@/components/ui/Switch";
+import { useToast } from "@/components/ui/Toast";
+import { SectionHeader } from "../ItemCard";
 
 interface PersonalInfoFormProps {
   data: PersonalInfo;
   onChange: (updated: Partial<PersonalInfo>) => void;
+  showAvatar?: boolean;
+  onThemeChange?: (updated: { showAvatar: boolean }) => void;
 }
 
-export function PersonalInfoForm({ data, onChange }: PersonalInfoFormProps) {
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        onChange({ avatarUrl: reader.result as string });
+const MAX_PHOTO_PX = 480;
+
+/** Downscale photos before storing them; phone photos are often 5MB+. */
+function resizeImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error);
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("Unsupported image"));
+      img.onload = () => {
+        const scale = Math.min(1, MAX_PHOTO_PX / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", 0.86));
       };
-      reader.readAsDataURL(file);
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+const FIELDS: Array<{ key: keyof PersonalInfo; label: string; icon: React.ReactNode; placeholder: string; type?: string; required?: boolean }> = [
+  { key: "fullName", label: "Full name", icon: <User />, placeholder: "e.g. Jane Doe", required: true },
+  { key: "jobTitle", label: "Target role", icon: <Briefcase />, placeholder: "e.g. Senior Product Designer" },
+  { key: "email", label: "Email", icon: <Mail />, placeholder: "jane@example.com", type: "email", required: true },
+  { key: "phone", label: "Phone", icon: <Phone />, placeholder: "+31 6 1234 5678", type: "tel" },
+  { key: "location", label: "Location", icon: <MapPin />, placeholder: "City, Country" },
+  { key: "website", label: "Website", icon: <Globe />, placeholder: "janedoe.com" },
+  { key: "linkedin", label: "LinkedIn", icon: <Linkedin />, placeholder: "linkedin.com/in/janedoe" },
+  { key: "github", label: "GitHub or portfolio", icon: <Github />, placeholder: "github.com/janedoe" },
+];
+
+export function PersonalInfoForm({ data, onChange, showAvatar = true, onThemeChange }: PersonalInfoFormProps) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+
+  const handleFile = async (file?: File) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ variant: "error", title: "Please choose an image file" });
+      return;
+    }
+    try {
+      const avatarUrl = await resizeImage(file);
+      onChange({ avatarUrl });
+      onThemeChange?.({ showAvatar: true });
+    } catch {
+      toast({ variant: "error", title: "Couldn’t read that image" });
+    } finally {
+      if (fileRef.current) fileRef.current.value = "";
     }
   };
 
   return (
-    <div className="space-y-4">
-      {/* Avatar / Photo Uploader */}
-      <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center gap-4">
-        <div className="w-16 h-16 rounded-2xl overflow-hidden ring-2 ring-slate-700 bg-slate-800 flex items-center justify-center flex-shrink-0">
-          {data.avatarUrl ? (
-            <img
-              src={data.avatarUrl}
-              alt={data.fullName}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <ImageIcon className="w-6 h-6 text-slate-500" />
-          )}
-        </div>
-        <div className="flex-1">
-          <div className="text-xs font-bold text-slate-200">Profile Photo</div>
-          <p className="text-[11px] text-slate-400 mb-2">
-            Upload a professional headshot or provide an image link.
-          </p>
-          <div className="flex items-center gap-2">
-            <label className="cursor-pointer text-[11px] font-bold px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all">
-              <span>Choose Photo</span>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
+    <div className="space-y-5">
+      <SectionHeader title="Personal details" description="How recruiters will find and contact you." />
+
+      <div className="flex items-center gap-4 rounded-2xl border border-line bg-surface p-4">
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          className="group relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-surface-2 ring-1 ring-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          aria-label={data.avatarUrl ? "Change photo" : "Upload photo"}
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            {data.avatarUrl ? (
+              <motion.img
+                key={data.avatarUrl.slice(-24)}
+                src={data.avatarUrl}
+                alt=""
+                initial={{ opacity: 0, scale: 1.1 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                className="h-full w-full object-cover"
               />
-            </label>
+            ) : (
+              <motion.span key="empty" className="flex h-full w-full items-center justify-center text-fg-subtle">
+                <ImagePlus className="h-6 w-6" />
+              </motion.span>
+            )}
+          </AnimatePresence>
+          <span className="absolute inset-0 flex items-center justify-center bg-black/40 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
+            {data.avatarUrl ? "Change" : "Upload"}
+          </span>
+        </button>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-fg">Photo</p>
+          <p className="text-[13px] text-fg-muted">Optional. Common in Europe, usually left out in the US and UK.</p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
+              {data.avatarUrl ? "Replace" : "Upload photo"}
+            </Button>
             {data.avatarUrl && (
-              <button
-                type="button"
-                onClick={() => onChange({ avatarUrl: "" })}
-                className="text-[11px] font-semibold text-rose-400 hover:text-rose-300 px-2 py-1 transition-colors"
-              >
-                Remove
-              </button>
+              <Button variant="ghost" size="sm" onClick={() => onChange({ avatarUrl: "" })} className="hover:bg-danger/10 hover:text-danger">
+                <Trash2 className="h-3.5 w-3.5" /> Remove
+              </Button>
             )}
           </div>
         </div>
+        {onThemeChange && data.avatarUrl && (
+          <Switch label="Show photo on CV" showLabel checked={showAvatar} onCheckedChange={(v) => onThemeChange({ showAvatar: v })} className="hidden sm:inline-flex" />
+        )}
+        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} />
       </div>
 
-      {/* Name and Title */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5 mb-1.5">
-            <User className="w-3.5 h-3.5 text-slate-400" />
-            <span>Full Name *</span>
-          </label>
-          <input
-            type="text"
-            value={data.fullName}
-            onChange={(e) => onChange({ fullName: e.target.value })}
-            placeholder="e.g. Alex Rivera"
-            className="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
-          />
-        </div>
-
-        <div>
-          <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5 mb-1.5">
-            <Briefcase className="w-3.5 h-3.5 text-slate-400" />
-            <span>Job Title / Target Role *</span>
-          </label>
-          <input
-            type="text"
-            value={data.jobTitle}
-            onChange={(e) => onChange({ jobTitle: e.target.value })}
-            placeholder="e.g. Senior Full-Stack Engineer"
-            className="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
-          />
-        </div>
-      </div>
-
-      {/* Email & Phone */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5 mb-1.5">
-            <Mail className="w-3.5 h-3.5 text-slate-400" />
-            <span>Email Address</span>
-          </label>
-          <input
-            type="email"
-            value={data.email}
-            onChange={(e) => onChange({ email: e.target.value })}
-            placeholder="alex.rivera@example.com"
-            className="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
-          />
-        </div>
-
-        <div>
-          <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5 mb-1.5">
-            <Phone className="w-3.5 h-3.5 text-slate-400" />
-            <span>Phone Number</span>
-          </label>
-          <input
-            type="tel"
-            value={data.phone}
-            onChange={(e) => onChange({ phone: e.target.value })}
-            placeholder="+1 (555) 234-5678"
-            className="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
-          />
-        </div>
-      </div>
-
-      {/* Location & Website */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5 mb-1.5">
-            <MapPin className="w-3.5 h-3.5 text-slate-400" />
-            <span>Location (City, Country/State)</span>
-          </label>
-          <input
-            type="text"
-            value={data.location}
-            onChange={(e) => onChange({ location: e.target.value })}
-            placeholder="San Francisco, CA"
-            className="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
-          />
-        </div>
-
-        <div>
-          <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5 mb-1.5">
-            <Globe className="w-3.5 h-3.5 text-slate-400" />
-            <span>Portfolio / Website</span>
-          </label>
-          <input
-            type="text"
-            value={data.website}
-            onChange={(e) => onChange({ website: e.target.value })}
-            placeholder="https://alexrivera.dev"
-            className="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
-          />
-        </div>
-      </div>
-
-      {/* LinkedIn & GitHub */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5 mb-1.5">
-            <Linkedin className="w-3.5 h-3.5 text-slate-400" />
-            <span>LinkedIn Profile</span>
-          </label>
-          <input
-            type="text"
-            value={data.linkedin}
-            onChange={(e) => onChange({ linkedin: e.target.value })}
-            placeholder="linkedin.com/in/username"
-            className="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
-          />
-        </div>
-
-        <div>
-          <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5 mb-1.5">
-            <Github className="w-3.5 h-3.5 text-slate-400" />
-            <span>GitHub / Profile</span>
-          </label>
-          <input
-            type="text"
-            value={data.github}
-            onChange={(e) => onChange({ github: e.target.value })}
-            placeholder="github.com/username"
-            className="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
-          />
-        </div>
+      <div className="grid grid-cols-1 gap-x-3 gap-y-4 sm:grid-cols-2">
+        {FIELDS.map((f) => (
+          <Field key={f.key} label={f.label} icon={f.icon} required={f.required}>
+            {(p) => (
+              <Input
+                {...p}
+                type={f.type ?? "text"}
+                autoComplete={f.key === "fullName" ? "name" : f.key === "email" ? "email" : f.key === "phone" ? "tel" : undefined}
+                value={(data[f.key] as string) || ""}
+                onChange={(e) => onChange({ [f.key]: e.target.value })}
+                placeholder={f.placeholder}
+              />
+            )}
+          </Field>
+        ))}
       </div>
     </div>
   );

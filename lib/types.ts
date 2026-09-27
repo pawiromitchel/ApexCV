@@ -19,6 +19,7 @@ export interface ExperienceItem {
   endDate: string;
   current: boolean;
   bullets: string[];
+  visible?: boolean;
 }
 
 export interface EducationItem {
@@ -30,6 +31,7 @@ export interface EducationItem {
   endDate: string;
   gpa?: string;
   honors?: string;
+  visible?: boolean;
 }
 
 export interface SkillItem {
@@ -37,6 +39,7 @@ export interface SkillItem {
   name: string;
   category: string;
   level?: number; // 1 to 5
+  visible?: boolean;
 }
 
 export interface ProjectItem {
@@ -46,6 +49,7 @@ export interface ProjectItem {
   techStack: string[];
   link?: string;
   github?: string;
+  visible?: boolean;
 }
 
 export interface CertificationItem {
@@ -54,6 +58,14 @@ export interface CertificationItem {
   issuer: string;
   date: string;
   url?: string;
+  visible?: boolean;
+}
+
+export interface LanguageItem {
+  id: string;
+  name: string;
+  proficiency: string; // e.g. "Native / Bilingual", "Full Professional (C1/C2)", "Professional Working (B2)", etc.
+  visible?: boolean;
 }
 
 export interface CustomSectionItem {
@@ -62,12 +74,14 @@ export interface CustomSectionItem {
   subtitle: string;
   date: string;
   description: string;
+  visible?: boolean;
 }
 
 export interface CustomSection {
   id: string;
   title: string;
   items: CustomSectionItem[];
+  visible?: boolean;
 }
 
 export type TemplateId =
@@ -86,15 +100,19 @@ export type FontFamily =
 
 export type SpacingScale = "compact" | "standard" | "spacious";
 export type FontSizeScale = "sm" | "base" | "lg";
+export type PageSize = "a4" | "letter";
 
 export interface ThemeConfig {
   templateId: TemplateId;
   fontFamily: FontFamily;
   fontSize: FontSizeScale;
+  documentMargins: SpacingScale;
   accentColor: string;
   spacing: SpacingScale;
   showAvatar: boolean;
   showIcons: boolean;
+  /** Paper size for preview and print. Missing on older CVs, which are A4. */
+  pageSize?: PageSize;
 }
 
 export interface ResumeData {
@@ -106,10 +124,12 @@ export interface ResumeData {
   experience: ExperienceItem[];
   education: EducationItem[];
   skills: SkillItem[];
+  languages?: LanguageItem[];
   projects: ProjectItem[];
   certifications: CertificationItem[];
   customSections: CustomSection[];
   sectionOrder: string[]; // e.g. ['summary', 'experience', 'education', 'skills', 'projects', 'certifications']
+  hiddenSections?: string[]; // array of section keys that should not be rendered
   themeConfig: ThemeConfig;
   createdAt: string;
   updatedAt: string;
@@ -124,4 +144,12 @@ export interface ResumeSummary {
   templateId: TemplateId;
   updatedAt: string;
   createdAt: string;
+  shareEnabled?: boolean;
+  data?: ResumeData;
+}
+
+export interface FocusedTarget {
+  section?: string;
+  itemId?: string;
+  bulletIndex?: number;
 }

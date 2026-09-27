@@ -1,8 +1,17 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+import { AnimatePresence } from "motion/react";
+import { FolderGit2, Plus } from "lucide-react";
 import { ProjectItem } from "@/lib/types";
-import { Plus, Trash2, FolderGit2, ExternalLink } from "lucide-react";
+import { Input } from "@/components/ui/Input";
+import { Textarea } from "@/components/ui/Textarea";
+import { Field } from "@/components/ui/Field";
+import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ItemCard, SectionHeader } from "../ItemCard";
+import { useItemAccordion } from "../EditorContext";
+import { moveItem, newId } from "./listUtils";
 
 interface ProjectsFormProps {
   projects: ProjectItem[];
@@ -10,156 +19,102 @@ interface ProjectsFormProps {
 }
 
 export function ProjectsForm({ projects, onChange }: ProjectsFormProps) {
-  const handleAddProject = () => {
-    const newItem: ProjectItem = {
-      id: `proj_${Date.now()}`,
-      name: "",
-      description: "",
-      techStack: [],
-      link: "",
-      github: "",
-    };
-    onChange([...projects, newItem]);
-  };
+  const accordion = useItemAccordion(projects);
+  // Keep the raw comma-separated text so typing "React, " doesn't lose the trailing separator
+  const [techDrafts, setTechDrafts] = useState<Record<string, string>>({});
+  const update = (id: string, patch: Partial<ProjectItem>) =>
+    onChange(projects.map((item) => (item.id === id ? { ...item, ...patch } : item)));
 
-  const handleUpdate = (id: string, updated: Partial<ProjectItem>) => {
-    onChange(
-      projects.map((item) => (item.id === id ? { ...item, ...updated } : item))
-    );
-  };
-
-  const handleDelete = (id: string) => {
-    onChange(projects.filter((item) => item.id !== id));
-  };
-
-  const handleTechStackChange = (id: string, text: string) => {
-    const arr = text.split(",").map((s) => s.trim()).filter(Boolean);
-    handleUpdate(id, { techStack: arr });
+  const add = () => {
+    const id = newId("proj");
+    onChange([...projects, { id, name: "", description: "", techStack: [], link: "", github: "", visible: true }]);
+    accordion.openAndFocus(id);
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            Key Projects ({projects.length})
-          </h3>
-          <p className="text-[11px] text-slate-500">
-            Open-source libraries, client work, apps, or business initiatives.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={handleAddProject}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 active:scale-95 text-slate-950 text-xs font-bold transition-all"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Add Project</span>
-        </button>
-      </div>
+      <SectionHeader
+        title="Projects"
+        description="Side projects, open source, or notable work samples."
+        actions={
+          <Button variant="outline" size="sm" onClick={add}>
+            <Plus className="h-3.5 w-3.5" /> Add project
+          </Button>
+        }
+      />
 
       {projects.length === 0 ? (
-        <div className="p-8 text-center border border-dashed border-slate-800 rounded-2xl bg-slate-900/40">
-          <FolderGit2 className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-          <p className="text-xs font-semibold text-slate-400">No projects added yet</p>
-          <button
-            type="button"
-            onClick={handleAddProject}
-            className="mt-3 text-xs font-bold text-sky-400 hover:underline"
-          >
-            + Add project showcase
-          </button>
-        </div>
+        <EmptyState
+          icon={<FolderGit2 />}
+          title="No projects yet"
+          description="Great for showing initiative, especially early in your career."
+          action={
+            <Button variant="primary" onClick={add}>
+              <Plus className="h-4 w-4" /> Add a project
+            </Button>
+          }
+        />
       ) : (
-        <div className="space-y-3">
-          {projects.map((item) => (
-            <div
-              key={item.id}
-              className="p-4 rounded-2xl border border-slate-800 bg-slate-900/60 space-y-3"
-            >
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-slate-200">
-                  {item.name || "Project Title"}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(item.id)}
-                  className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-colors"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[11px] font-bold text-slate-300 block mb-1">
-                    Project Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={item.name}
-                    onChange={(e) => handleUpdate(item.id, { name: e.target.value })}
-                    placeholder="e.g. StreamCast Protocol"
-                    className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-sky-500"
-                  />
+        <div className="space-y-2.5">
+          <AnimatePresence initial={false}>
+            {projects.map((item, index) => (
+              <ItemCard
+                key={item.id}
+                id={item.id}
+                index={index}
+                total={projects.length}
+                noun="project"
+                title={item.name || "Untitled project"}
+                subtitle={item.techStack?.length ? item.techStack.join(", ") : "Add a description and tools"}
+                hidden={item.visible === false}
+                open={accordion.isOpen(item.id)}
+                onToggle={() => accordion.toggle(item.id)}
+                onMove={(dir) => onChange(moveItem(projects, index, dir))}
+                onToggleHidden={() => update(item.id, { visible: item.visible === false })}
+                onDelete={() => onChange(projects.filter((p) => p.id !== item.id))}
+                focusRequested={accordion.focusId === item.id}
+                onFocused={accordion.clearFocus}
+              >
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Field label="Project name" required>
+                    {(p) => <Input {...p} value={item.name} onChange={(e) => update(item.id, { name: e.target.value })} placeholder="e.g. Budget planner app" />}
+                  </Field>
+                  <Field label="Tools & technologies" hint="Separate with commas">
+                    {(p) => (
+                      <Input
+                        {...p}
+                        value={techDrafts[item.id] ?? (item.techStack || []).join(", ")}
+                        onChange={(e) => {
+                          setTechDrafts((d) => ({ ...d, [item.id]: e.target.value }));
+                          update(item.id, { techStack: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) });
+                        }}
+                        placeholder="Figma, React, Supabase"
+                      />
+                    )}
+                  </Field>
                 </div>
-
-                <div>
-                  <label className="text-[11px] font-bold text-slate-300 block mb-1">
-                    Technologies (comma separated)
-                  </label>
-                  <input
-                    type="text"
-                    value={(item.techStack || []).join(", ")}
-                    onChange={(e) => handleTechStackChange(item.id, e.target.value)}
-                    placeholder="e.g. TypeScript, Next.js, Go, Docker"
-                    className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-sky-500"
-                  />
+                <Field label="What it does and the result">
+                  {(p) => (
+                    <Textarea
+                      {...p}
+                      rows={3}
+                      value={item.description}
+                      onChange={(e) => update(item.id, { description: e.target.value })}
+                      placeholder="The problem, what you built, and the outcome (users, speed, revenue…)"
+                    />
+                  )}
+                </Field>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Field label="Live link">
+                    {(p) => <Input {...p} type="url" value={item.link || ""} onChange={(e) => update(item.id, { link: e.target.value })} placeholder="https://… (optional)" />}
+                  </Field>
+                  <Field label="Source code">
+                    {(p) => <Input {...p} type="url" value={item.github || ""} onChange={(e) => update(item.id, { github: e.target.value })} placeholder="https://github.com/… (optional)" />}
+                  </Field>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[11px] font-bold text-slate-300 block mb-1">
-                    Live Demo Link
-                  </label>
-                  <input
-                    type="text"
-                    value={item.link || ""}
-                    onChange={(e) => handleUpdate(item.id, { link: e.target.value })}
-                    placeholder="https://myproject.com"
-                    className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-sky-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-bold text-slate-300 block mb-1">
-                    Source Code / GitHub
-                  </label>
-                  <input
-                    type="text"
-                    value={item.github || ""}
-                    onChange={(e) => handleUpdate(item.id, { github: e.target.value })}
-                    placeholder="https://github.com/..."
-                    className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-sky-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[11px] font-bold text-slate-300 block mb-1">
-                  Description / Impact
-                </label>
-                <textarea
-                  rows={2}
-                  value={item.description}
-                  onChange={(e) => handleUpdate(item.id, { description: e.target.value })}
-                  placeholder="Explain the problem solved, architecture used, and quantifiable outcome..."
-                  className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-sky-500"
-                />
-              </div>
-            </div>
-          ))}
+              </ItemCard>
+            ))}
+          </AnimatePresence>
         </div>
       )}
     </div>

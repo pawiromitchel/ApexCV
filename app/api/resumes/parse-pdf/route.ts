@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { parsePdfResume } from "@/lib/pdfParser";
 import { upsertResume } from "@/lib/db";
+import { getOrCreateDeviceId, attachDeviceIdCookie } from "@/lib/deviceAuth";
 
 export async function POST(request: NextRequest) {
   try {
+    const { deviceId, isNew } = getOrCreateDeviceId(request);
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     const saveToDb = formData.get("save") !== "false";
@@ -19,6 +21,7 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(arrayBuffer);
 
     const parsedResume = await parsePdfResume(buffer);
+    parsedResume.userId = deviceId;
 
     // If fileName was provided, set fallback title
     if (file.name && (!parsedResume.personalInfo.fullName || parsedResume.personalInfo.fullName === "Unnamed")) {
@@ -26,14 +29,18 @@ export async function POST(request: NextRequest) {
     }
 
     if (saveToDb) {
-      upsertResume(parsedResume);
+      upsertResume(parsedResume, deviceId);
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       resume: parsedResume,
       message: "PDF parsed successfully",
     });
+    if (isNew) {
+      attachDeviceIdCookie(response, deviceId);
+    }
+    return response;
   } catch (error: any) {
     console.error("PDF Parsing Error:", error);
     return NextResponse.json(
