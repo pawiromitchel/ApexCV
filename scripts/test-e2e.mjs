@@ -4,7 +4,7 @@ import path from "path";
 
 const BRAVE_PATH = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser";
 const BASE_URL = process.env.BASE_URL || "http://localhost:3001";
-const ARTIFACT_DIR = process.env.ARTIFACT_DIR || "/Users/toasty/.gemini/antigravity/brain/d8d3bf1b-2fa6-420e-b003-8eeb6607b4e9";
+const ARTIFACT_DIR = process.env.ARTIFACT_DIR || path.resolve("test-artifacts");
 const SCREENSHOT_DIR = path.join(ARTIFACT_DIR, "screenshots");
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
