@@ -1,15 +1,14 @@
-# Multi-stage Dockerfile for CVForge Next.js app with built-in node:sqlite
+# Multi-stage Dockerfile for ApexCV Next.js app with built-in node:sqlite
 FROM node:22-alpine AS deps
 RUN apk add --no-cache libc6-compat
-WORKDIR /app
+WORKDIR /usr/src/app
 
 COPY package.json package-lock.json ./
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci --legacy-peer-deps
+RUN npm ci --legacy-peer-deps
 
 FROM node:22-alpine AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+WORKDIR /usr/src/app
+COPY --from=deps /usr/src/app/node_modules ./node_modules
 COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -18,28 +17,27 @@ ENV NODE_ENV=production
 RUN npm run build
 
 FROM node:22-alpine AS runner
-WORKDIR /app
+WORKDIR /usr/src/app
+
+RUN apk add --no-cache su-exec
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3001
 ENV HOSTNAME="0.0.0.0"
-ENV DB_PATH=/app/data/cv_builder.db
+ENV DB_PATH=/usr/src/app/data/cv_builder.db
 
-RUN mkdir -p /app/data && chown -R node:node /app
-
-COPY --chown=node:node --from=builder /app/package.json ./package.json
-COPY --chown=node:node --from=builder /app/package-lock.json ./package-lock.json
-COPY --chown=node:node --from=builder /app/public ./public
-COPY --chown=node:node --from=builder /app/.next ./.next
-COPY --chown=node:node --from=builder /app/node_modules ./node_modules
-COPY --chown=node:node --from=builder /app/lib ./lib
-COPY --chown=node:node --from=builder /app/next.config.mjs ./next.config.mjs
-
-USER node
+# Copy standalone build artifacts
+COPY --chown=node:node --from=builder /usr/src/app/public ./public
+COPY --chown=node:node --from=builder /usr/src/app/.next/standalone ./
+COPY --chown=node:node --from=builder /usr/src/app/.next/static ./.next/static
+COPY --chmod=755 docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
 EXPOSE 3001
 
-VOLUME ["/app/data"]
+VOLUME ["/usr/src/app/data"]
 
-CMD ["npm", "run", "start"]
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["node", "server.js"]
+
+

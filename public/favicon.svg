@@ -1,3 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#0ea5e9" />
+      <stop offset="60%" stopColor="#0284c7" />
+      <stop offset="100%" stopColor="#10b981" />
+    </linearGradient>
+    <linearGradient id="glyph" x1="16" y1="12" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#ffffff" />
+      <stop offset="100%" stopColor="#d1fae5" />
+    </linearGradient>
+    <filter id="shadow" x="0" y="0" width="64" height="64" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" floodColor="#0c4a6e" floodOpacity="0.45" />
+    </filter>
+  </defs>
+
+  <!-- Base App Tile with Subtle Border -->
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="url(#bg)" />
+  <rect x="2.5" y="2.5" width="59" height="59" rx="14.5" stroke="#ffffff" stroke-opacity="0.25" stroke-width="1" />
+
+  <!-- Iconic Apex Peak / Stylized "A" + Resume Structure -->
+  <g filter="url(#shadow)">
+    <!-- Main Apex Chevron -->
+    <path d="M32 13L47 43H38.5L32 29.5L25.5 43H17L32 13Z" fill="url(#glyph)" />
+    <!-- Dynamic horizontal crossbar / resume document lines -->
+    <rect x="25.5" y="34.5" width="13" height="3" rx="1.5" fill="#0369a1" />
+    <circle cx="32" cy="22" r="2.5" fill="#0284c7" />
+    <rect x="22" y="47.5" width="20" height="2.5" rx="1.25" fill="#ffffff" fill-opacity="0.9" />
+  </g>
 </svg>

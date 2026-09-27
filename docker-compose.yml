@@ -1,19 +1,27 @@
 services:
   apexcv:
-    image: node:22-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: apexcv-app
     restart: unless-stopped
-    working_dir: /apexcv
     ports:
       - "3001:3001"
     environment:
       - NODE_ENV=production
       - PORT=3001
-      - DB_PATH=/apexcv/data/cv_builder.db
+      - DB_PATH=/usr/src/app/data/cv_builder.db
     volumes:
-      - .:/apexcv
-      - apexcv_data:/apexcv/data
-    command: sh -c "mkdir -p /apexcv/data && npx next start -p 3001"
+      - apexcv_data:/usr/src/app/data
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: apexcv-tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - apexcv
 
 volumes:
   apexcv_data:
+

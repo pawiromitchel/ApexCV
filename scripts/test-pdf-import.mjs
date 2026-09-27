@@ -3,8 +3,8 @@ import fs from "fs";
 import path from "path";
 
 const BRAVE_PATH = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser";
-const BASE_URL = "http://localhost:3001";
-const ARTIFACT_DIR = "/Users/toasty/.gemini/antigravity/brain/d8d3bf1b-2fa6-420e-b003-8eeb6607b4e9";
+const BASE_URL = process.env.BASE_URL || "http://localhost:3001";
+const ARTIFACT_DIR = process.env.ARTIFACT_DIR || "/Users/toasty/.gemini/antigravity/brain/d8d3bf1b-2fa6-420e-b003-8eeb6607b4e9";
 const SCREENSHOT_DIR = path.join(ARTIFACT_DIR, "screenshots");
 const TEST_PDF_PATH = path.join(process.cwd(), "test-candidate-resume.pdf");
 
@@ -89,15 +89,17 @@ async function runPdfImportTest() {
     console.log("📍 2. Testing PDF Import via Dashboard Modal (/app)...");
     await page.goto(`${BASE_URL}/app`, { waitUntil: "networkidle0" });
 
-    // Click "Import PDF" button in top bar
+    // Click "Import PDF" button in top bar (either text or title attribute)
     await page.evaluate(() => {
       const buttons = Array.from(document.querySelectorAll("button"));
-      const importBtn = buttons.find((b) => b.textContent?.includes("Import PDF"));
+      const importBtn = buttons.find(
+        (b) => b.textContent?.includes("Import PDF") || b.getAttribute("title")?.includes("Import PDF")
+      );
       if (importBtn) importBtn.click();
     });
-    await sleep(400);
 
-    // Upload the test PDF file to the modal dropzone file input
+    // Wait for the modal and file input to become visible
+    await page.waitForSelector("#modal-pdf-file-input", { timeout: 5000 });
     const fileInput = await page.$("#modal-pdf-file-input");
     if (!fileInput) throw new Error("Could not find modal file input!");
 

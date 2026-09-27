@@ -1,28 +1,34 @@
-"use client";
-
+import { ExperienceEntries, contactLines } from "./ExperienceEntries";
 import React from "react";
-import { ResumeData } from "@/lib/types";
-import { Mail, Phone, MapPin, Globe, Linkedin } from "lucide-react";
+import { ResumeData, CustomSection, FocusedTarget } from "@/lib/types";
+import { getSpacingStyles } from "@/lib/templateSpacing";
+import { normalizeUrl, cleanUrl } from "@/lib/utils";
+import { formatMonthYear } from "@/lib/dateValidation";
+import { Mail, Phone, MapPin, Globe, Linkedin, Github, ExternalLink, Award } from "lucide-react";
 
 interface TemplateProps {
   data: ResumeData;
+  focusedTarget?: FocusedTarget | null;
 }
 
-export function ExecutiveTemplate({ data }: TemplateProps) {
-  const { personalInfo, summary, experience, education, skills, projects, certifications, customSections, sectionOrder, themeConfig } = data;
+export function ExecutiveTemplate({ data, focusedTarget }: TemplateProps) {
+  const { personalInfo, summary, experience, education, skills, languages, projects, certifications, customSections, sectionOrder, themeConfig } = data;
   const accent = themeConfig.accentColor || "#1e3a8a"; // Navy default
+  const spacing = getSpacingStyles(themeConfig?.spacing, themeConfig?.documentMargins);
 
-  const spacingClass =
-    themeConfig.spacing === "compact"
-      ? "space-y-3.5"
-      : themeConfig.spacing === "spacious"
-      ? "space-y-6"
-      : "space-y-4.5";
+  const getFontSizeClass = () => {
+    switch (themeConfig?.fontSize) {
+      case "sm": return "text-[0.8rem] sm:text-sm";
+      case "lg": return "text-base sm:text-lg";
+      case "base":
+      default: return "text-sm sm:text-base";
+    }
+  };
 
   return (
-    <div className="p-8 sm:p-11 text-slate-900 leading-normal bg-white min-h-[297mm] font-serif">
+    <div className={`${spacing.containerPadding} ${getFontSizeClass()} text-slate-900 leading-normal bg-white min-h-[var(--sheet-h,297mm)] font-serif`}>
       {/* Header */}
-      <header className="text-center pb-4 mb-4 border-b-2 border-slate-900">
+      <header data-edit-section="personal" className={`text-center ${spacing.headerMargin} border-b-2 border-slate-900`}>
         <h1 className="text-3xl font-bold tracking-tight uppercase text-slate-900">
           {personalInfo.fullName || "Your Full Name"}
         </h1>
@@ -34,33 +40,34 @@ export function ExecutiveTemplate({ data }: TemplateProps) {
         </div>
 
         {/* Contact Strip */}
-        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 mt-2.5 text-xs text-slate-700 font-sans">
-          {personalInfo.location && <span>{personalInfo.location}</span>}
-          {personalInfo.location && personalInfo.phone && <span>•</span>}
-          {personalInfo.phone && <span>{personalInfo.phone}</span>}
-          {personalInfo.phone && personalInfo.email && <span>•</span>}
-          {personalInfo.email && <span>{personalInfo.email}</span>}
-          {personalInfo.linkedin && (
-            <>
-              <span>•</span>
-              <span>{personalInfo.linkedin.replace(/^https?:\/\//, "")}</span>
-            </>
-          )}
-          {personalInfo.website && (
-            <>
-              <span>•</span>
-              <span>{personalInfo.website.replace(/^https?:\/\//, "")}</span>
-            </>
-          )}
+        <div className="mt-2.5 space-y-1 text-xs text-slate-700 font-sans">
+          {contactLines(personalInfo).map((line) => (
+            <div key={line.join()} className="flex flex-wrap items-center justify-center gap-x-3">
+              {line.map((part, i) => (
+                <React.Fragment key={part}>
+                  {i > 0 && <span aria-hidden>•</span>}
+                  <span>{part}</span>
+                </React.Fragment>
+              ))}
+            </div>
+          ))}
         </div>
       </header>
 
       {/* Ordered Content */}
-      <div className={spacingClass}>
+      <div className={spacing.sectionGap}>
         {sectionOrder.map((sectionKey) => {
+          const isSectionFocused = focusedTarget?.section === sectionKey;
+
           if (sectionKey === "summary" && summary) {
             return (
-              <section key="summary">
+              <section
+                key="summary"
+                data-edit-section="summary"
+                className={`transition-all duration-300 rounded-lg ${
+                  isSectionFocused ? "cv-focus-section" : ""
+                }`}
+              >
                 <h2
                   className="text-xs font-bold uppercase tracking-wider pb-1 mb-2 border-b border-slate-300 font-sans"
                   style={{ color: accent }}
@@ -76,7 +83,13 @@ export function ExecutiveTemplate({ data }: TemplateProps) {
 
           if (sectionKey === "experience" && experience?.length > 0) {
             return (
-              <section key="experience">
+              <section
+                key="experience"
+                data-edit-section="experience"
+                className={`transition-all duration-300 rounded-lg ${
+                  isSectionFocused && !focusedTarget?.itemId ? "cv-focus-section" : ""
+                }`}
+              >
                 <h2
                   className="text-xs font-bold uppercase tracking-wider pb-1 mb-3 border-b border-slate-300 font-sans"
                   style={{ color: accent }}
@@ -84,31 +97,7 @@ export function ExecutiveTemplate({ data }: TemplateProps) {
                   Professional Experience
                 </h2>
                 <div className="space-y-4">
-                  {experience.map((exp) => (
-                    <div key={exp.id} className="text-xs">
-                      <div className="flex justify-between items-baseline">
-                        <span className="font-bold text-slate-900 text-sm">
-                          {exp.role}
-                        </span>
-                        <span className="text-xs font-sans text-slate-600">
-                          {exp.startDate} – {exp.current ? "Present" : exp.endDate}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center text-slate-700 font-sans font-semibold mb-1.5">
-                        <span style={{ color: accent }}>{exp.company}</span>
-                        {exp.location && <span className="font-normal text-slate-500">{exp.location}</span>}
-                      </div>
-                      {exp.bullets && exp.bullets.length > 0 && (
-                        <ul className="list-disc ml-4 space-y-1 text-slate-800 font-sans">
-                          {exp.bullets.map((b, i) => (
-                            <li key={i} className="pl-0.5 leading-relaxed">
-                              {b}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  ))}
+                  <ExperienceEntries experience={experience} focusedTarget={focusedTarget} style={{ accent, density: themeConfig?.spacing, role: "text-sm font-bold text-slate-900", groupRole: "text-xs font-bold text-slate-900", company: "font-sans text-xs font-semibold", groupCompany: "font-sans text-sm font-semibold", date: "font-sans text-xs text-slate-600", location: "font-sans text-[11px] text-slate-500", bullets: "font-sans space-y-1 text-xs text-slate-800" }} />
                 </div>
               </section>
             );
@@ -116,7 +105,13 @@ export function ExecutiveTemplate({ data }: TemplateProps) {
 
           if (sectionKey === "education" && education?.length > 0) {
             return (
-              <section key="education">
+              <section
+                key="education"
+                data-edit-section="education"
+                className={`transition-all duration-300 rounded-lg ${
+                  isSectionFocused && !focusedTarget?.itemId ? "cv-focus-section" : ""
+                }`}
+              >
                 <h2
                   className="text-xs font-bold uppercase tracking-wider pb-1 mb-2.5 border-b border-slate-300 font-sans"
                   style={{ color: accent }}
@@ -124,29 +119,38 @@ export function ExecutiveTemplate({ data }: TemplateProps) {
                   Education & Credentials
                 </h2>
                 <div className="space-y-2.5">
-                  {education.map((edu) => (
-                    <div key={edu.id} className="text-xs">
-                      <div className="flex justify-between items-baseline">
-                        <span className="font-bold text-slate-900">
-                          {edu.degree}
-                        </span>
-                        <span className="text-xs font-sans text-slate-600">
-                          {edu.startDate} – {edu.endDate}
-                        </span>
+                  {education.map((edu) => {
+                    const isItemFocused = focusedTarget?.itemId === edu.id;
+                    return (
+                      <div
+                        key={edu.id}
+                        data-edit-item={edu.id}
+                        className={`text-xs transition-all duration-300 rounded-lg ${
+                          isItemFocused ? "cv-focus" : ""
+                        }`}
+                      >
+                        <div className="flex justify-between items-baseline gap-2">
+                          <span className="font-bold text-slate-900 min-w-0 flex-1 truncate">
+                            {edu.degree}
+                          </span>
+                          <span className="text-xs font-sans text-slate-600 whitespace-nowrap flex-shrink-0 ml-auto">
+                            {formatMonthYear(edu.startDate)} – {formatMonthYear(edu.endDate)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-slate-700 font-sans gap-2">
+                          <span className="font-medium min-w-0 truncate" style={{ color: accent }}>
+                            {edu.institution}
+                          </span>
+                          {edu.location && <span className="text-slate-500 flex-shrink-0 text-[11px]">{edu.location}</span>}
+                        </div>
+                        {(edu.gpa || edu.honors) && (
+                          <p className="text-slate-600 font-sans text-[11px] mt-0.5">
+                            {edu.honors} {edu.gpa && `(GPA: ${edu.gpa})`}
+                          </p>
+                        )}
                       </div>
-                      <div className="flex justify-between items-center text-slate-700 font-sans">
-                        <span className="font-medium" style={{ color: accent }}>
-                          {edu.institution}
-                        </span>
-                        {edu.location && <span className="text-slate-500">{edu.location}</span>}
-                      </div>
-                      {(edu.gpa || edu.honors) && (
-                        <p className="text-slate-600 font-sans text-[11px] mt-0.5">
-                          {edu.honors} {edu.gpa && `(GPA: ${edu.gpa})`}
-                        </p>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             );
@@ -154,7 +158,13 @@ export function ExecutiveTemplate({ data }: TemplateProps) {
 
           if (sectionKey === "skills" && skills?.length > 0) {
             return (
-              <section key="skills">
+              <section
+                key="skills"
+                data-edit-section="skills"
+                className={`transition-all duration-300 rounded-lg ${
+                  isSectionFocused ? "cv-focus-section" : ""
+                }`}
+              >
                 <h2
                   className="text-xs font-bold uppercase tracking-wider pb-1 mb-2.5 border-b border-slate-300 font-sans"
                   style={{ color: accent }}
@@ -164,8 +174,8 @@ export function ExecutiveTemplate({ data }: TemplateProps) {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 text-xs font-sans text-slate-800">
                   {skills.map((s) => (
                     <div key={s.id} className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accent }} />
-                      <span>{s.name}</span>
+                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: accent }} />
+                      <span className="truncate">{s.name}</span>
                     </div>
                   ))}
                 </div>
@@ -175,7 +185,13 @@ export function ExecutiveTemplate({ data }: TemplateProps) {
 
           if (sectionKey === "projects" && projects?.length > 0) {
             return (
-              <section key="projects">
+              <section
+                key="projects"
+                data-edit-section="projects"
+                className={`transition-all duration-300 rounded-lg ${
+                  isSectionFocused && !focusedTarget?.itemId ? "cv-focus-section" : ""
+                }`}
+              >
                 <h2
                   className="text-xs font-bold uppercase tracking-wider pb-1 mb-2.5 border-b border-slate-300 font-sans"
                   style={{ color: accent }}
@@ -183,16 +199,66 @@ export function ExecutiveTemplate({ data }: TemplateProps) {
                   Key Initiatives & Ventures
                 </h2>
                 <div className="space-y-2 text-xs">
-                  {projects.map((proj) => (
-                    <div key={proj.id}>
-                      <div className="font-bold text-slate-900">
-                        {proj.name}
+                  {projects.map((proj) => {
+                    const isItemFocused = focusedTarget?.itemId === proj.id;
+                    return (
+                      <div
+                        key={proj.id}
+                        data-edit-item={proj.id}
+                        className={`p-2 rounded border border-slate-200/80 bg-slate-50/40 transition-all duration-300 ${
+                          isItemFocused ? "cv-focus" : ""
+                        }`}
+                      >
+                        <div className="flex justify-between items-baseline font-sans mb-0.5 gap-2 text-xs leading-snug">
+                          <span className="font-bold text-slate-900 font-serif text-xs min-w-0 flex-1 truncate">
+                            {proj.name}
+                          </span>
+                          <div className="flex items-center gap-2 flex-shrink-0 whitespace-nowrap">
+                            {proj.link && (
+                              <a
+                                href={normalizeUrl(proj.link)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 text-[11px] font-medium hover:underline"
+                                style={{ color: accent }}
+                                title={proj.link}
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                                <span>{cleanUrl(proj.link)}</span>
+                              </a>
+                            )}
+                            {proj.github && (
+                              <a
+                                href={normalizeUrl(proj.github)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 hover:text-slate-900 hover:underline"
+                                title={proj.github}
+                              >
+                                <Github className="w-3 h-3" />
+                                <span>Code</span>
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-slate-700 font-sans leading-relaxed">
+                          {proj.description}
+                        </p>
+                        {proj.techStack?.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1 font-sans">
+                            {proj.techStack.map((tech, i) => (
+                              <span
+                                key={i}
+                                className="text-[10px] px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-700 font-medium"
+                              >
+                                {tech}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <p className="text-slate-700 font-sans leading-relaxed">
-                        {proj.description}
-                      </p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             );
@@ -200,7 +266,13 @@ export function ExecutiveTemplate({ data }: TemplateProps) {
 
           if (sectionKey === "certifications" && certifications?.length > 0) {
             return (
-              <section key="certifications">
+              <section
+                key="certifications"
+                data-edit-section="certifications"
+                className={`transition-all duration-300 rounded-lg ${
+                  isSectionFocused && !focusedTarget?.itemId ? "cv-focus-section" : ""
+                }`}
+              >
                 <h2
                   className="text-xs font-bold uppercase tracking-wider pb-1 mb-2 border-b border-slate-300 font-sans"
                   style={{ color: accent }}
@@ -208,15 +280,150 @@ export function ExecutiveTemplate({ data }: TemplateProps) {
                   Certifications & Governance
                 </h2>
                 <div className="grid grid-cols-2 gap-2 text-xs font-sans">
-                  {certifications.map((c) => (
-                    <div key={c.id}>
-                      <div className="font-semibold text-slate-900">{c.name}</div>
-                      <div className="text-[11px] text-slate-600">{c.issuer} ({c.date})</div>
+                  {certifications.map((c) => {
+                    const isItemFocused = focusedTarget?.itemId === c.id;
+                    return (
+                      <div
+                        key={c.id}
+                        data-edit-item={c.id}
+                        className={`p-2 rounded border border-slate-200/80 bg-slate-50/40 flex items-start gap-2 transition-all duration-300 ${
+                          isItemFocused ? "cv-focus" : ""
+                        }`}
+                      >
+                        <div
+                          className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 text-white mt-0.5"
+                          style={{ backgroundColor: accent }}
+                        >
+                          <Award className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-slate-900 leading-snug line-clamp-1">{c.name || c.issuer}</div>
+                          {c.name && c.issuer && (
+                            <div className="text-[11px] text-slate-600 line-clamp-1">
+                              {c.issuer}
+                            </div>
+                          )}
+                          <div className="flex items-center justify-between gap-1 mt-0.5">
+                            <span className="text-[10px] text-slate-500 whitespace-nowrap">
+                              {formatMonthYear(c.date)}
+                            </span>
+                            {c.url && (
+                              <a
+                                href={normalizeUrl(c.url)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-0.5 text-[10px] font-medium text-blue-700 hover:underline ml-auto flex-shrink-0"
+                              >
+                                <ExternalLink className="w-2.5 h-2.5" />
+                                <span>Verify</span>
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          }
+
+          if (sectionKey === "languages" && languages && languages.length > 0) {
+            return (
+              <section
+                key="languages"
+                data-edit-section="languages"
+                className={`transition-all duration-300 rounded-lg ${
+                  isSectionFocused ? "cv-focus-section" : ""
+                }`}
+              >
+                <h2
+                  className="text-xs font-bold uppercase tracking-wider pb-1 mb-2 border-b border-slate-300 font-sans"
+                  style={{ color: accent }}
+                >
+                  Languages
+                </h2>
+                <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs font-sans">
+                  {languages.map((l) => (
+                    <div key={l.id} data-edit-item={l.id}>
+                      <span className="font-semibold text-slate-900">{l.name}</span>
+                      <span className="text-[11px] text-slate-600"> ({l.proficiency})</span>
                     </div>
                   ))}
                 </div>
               </section>
             );
+          }
+
+          // Custom sections
+          const renderCustomSection = (custom: CustomSection) => {
+            if (!custom || !custom.items || custom.items.length === 0) return null;
+            const isCustomFocused = focusedTarget?.section === custom.id;
+            return (
+              <section
+                key={custom.id}
+                data-edit-section={custom.id}
+                className={`transition-all duration-300 rounded-lg ${
+                  isCustomFocused && !focusedTarget?.itemId ? "cv-focus-section" : ""
+                }`}
+              >
+                <h2
+                  className={`text-xs font-bold uppercase tracking-wider pb-1 ${spacing.sectionHeaderMargin} border-b border-slate-300 font-sans`}
+                  style={{ color: accent }}
+                >
+                  {custom.title}
+                </h2>
+                <div className={spacing.itemGap}>
+                  {custom.items.map((item) => {
+                    const isItemFocused = focusedTarget?.itemId === item.id;
+                    return (
+                      <div
+                        key={item.id}
+                        data-edit-item={item.id}
+                        className={`text-xs transition-all duration-300 rounded-lg ${
+                          isItemFocused ? "cv-focus" : ""
+                        }`}
+                      >
+                        <div className="flex justify-between items-baseline font-sans gap-2">
+                          <span className="font-bold text-slate-900 min-w-0 flex-1 truncate">
+                            {item.title}
+                          </span>
+                          {item.date && (
+                            <span className="text-[11px] text-slate-600 font-normal whitespace-nowrap flex-shrink-0 ml-auto">
+                              {formatMonthYear(item.date)}
+                            </span>
+                          )}
+                        </div>
+                        {item.subtitle && (
+                          <div className="text-slate-700 italic text-[11.5px] mt-0.5">
+                            {item.subtitle}
+                          </div>
+                        )}
+                        {item.description && (
+                          <p className="text-slate-800 leading-relaxed font-sans mt-0.5">
+                            {item.description}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          };
+
+          if (sectionKey === "customSections" || sectionKey === "custom") {
+            if (!customSections || customSections.length === 0) return null;
+            return (
+              <React.Fragment key={sectionKey}>
+                {customSections.map((custom) => renderCustomSection(custom))}
+              </React.Fragment>
+            );
+          }
+
+          const matchedCustom = customSections?.find((c) => c.id === sectionKey);
+          if (matchedCustom) {
+            return renderCustomSection(matchedCustom);
           }
 
           return null;

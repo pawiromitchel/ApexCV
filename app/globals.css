@@ -2,15 +2,65 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Design tokens. Every app surface uses these via Tailwind (bg-surface, text-fg-muted,
+ * border-line, bg-primary …) so light and dark themes stay in sync. Values are RGB
+ * channels so Tailwind opacity modifiers (bg-primary/10) keep working.
+ * The CV sheet itself is paper and intentionally does not use them.
+ */
 :root {
-  --background: #090d16;
-  --foreground: #f1f5f9;
+  --canvas: 246 247 249;
+  --surface: 255 255 255;
+  --surface-2: 241 243 246;
+  --surface-3: 228 232 238;
+  --line: 226 230 236;
+  --line-strong: 203 210 220;
+  --fg: 12 18 31;
+  --fg-secondary: 49 59 76;
+  --fg-muted: 88 99 116;
+  --fg-subtle: 118 129 146;
+  --primary: 2 132 199;
+  --primary-hover: 3 105 161;
+  --primary-fg: 255 255 255;
+  --success: 5 150 105;
+  --warning: 202 111 6;
+  --danger: 220 38 38;
+  --preview: 229 233 239;
+  --overlay: 15 23 42;
+  --shadow-color: 15 23 42;
+
+  --sheet-w: 210mm;
+  --sheet-h: 297mm;
   --font-inter: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color-scheme: light;
+}
+
+.dark {
+  --canvas: 9 12 20;
+  --surface: 15 20 31;
+  --surface-2: 23 30 44;
+  --surface-3: 34 43 60;
+  --line: 31 39 56;
+  --line-strong: 52 63 85;
+  --fg: 241 245 249;
+  --fg-secondary: 203 213 225;
+  --fg-muted: 150 162 182;
+  --fg-subtle: 118 130 151;
+  --primary: 56 189 248;
+  --primary-hover: 125 211 252;
+  --primary-fg: 4 20 32;
+  --success: 52 211 153;
+  --warning: 251 191 36;
+  --danger: 251 113 133;
+  --preview: 6 9 15;
+  --overlay: 2 6 14;
+  --shadow-color: 0 0 0;
+  color-scheme: dark;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
+  color: rgb(var(--fg));
+  background: rgb(var(--canvas));
   font-family: var(--font-inter);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -18,18 +68,21 @@ body {
 
 /* Custom Scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: rgb(var(--line-strong));
   border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: rgb(var(--fg-subtle));
+  background-clip: padding-box;
 }
 
 /* Hide scrollbar utility */
@@ -41,32 +94,73 @@ body {
   scrollbar-width: none;
 }
 
-/* Tactile micro-interactions */
-.interactive-lift {
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.interactive-lift:hover {
-  transform: translateY(-2px);
+/* Theme switch: circular reveal via the View Transitions API (see lib/theme) */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
 }
 
-/* Glassmorphism card */
-.glass-panel {
-  background: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(51, 65, 85, 0.5);
+/* Fallback theme switch for browsers without view transitions */
+.theme-transition,
+.theme-transition *,
+.theme-transition *::before,
+.theme-transition *::after {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.2s ease, fill 0.2s ease !important;
 }
 
 /* CV Document Sheet (Screen View) */
 .cv-sheet {
-  width: 210mm;
-  min-height: 297mm;
+  width: var(--sheet-w);
+  min-height: var(--sheet-h);
   background-color: #ffffff;
   color: #0f172a;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   position: relative;
-  transition: all 0.2s ease-in-out;
   transform-origin: top center;
+}
+
+/*
+ * Preview highlights (click-to-edit hover and "you're editing this" focus).
+ * Drawn with box-shadow so they never change layout; padding or negative margins would
+ * shift spacing inside the templates' space-y stacks.
+ */
+.cv-editable [data-edit-section],
+.cv-editable [data-edit-item] {
+  cursor: pointer;
+  border-radius: 3px;
+  transition: box-shadow 0.15s ease, background-color 0.15s ease;
+}
+.cv-editable [data-edit-section]:hover {
+  background-color: rgba(14, 165, 233, 0.03);
+  box-shadow: 0 0 0 6px rgba(14, 165, 233, 0.03), 0 0 0 7px rgba(14, 165, 233, 0.25);
+}
+.cv-editable [data-edit-item]:hover {
+  background-color: rgba(14, 165, 233, 0.05);
+  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.05), 0 0 0 5px rgba(14, 165, 233, 0.4);
+}
+.cv-focus {
+  border-radius: 3px;
+  background-color: rgba(14, 165, 233, 0.07);
+  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.07), 0 0 0 5.5px rgba(14, 165, 233, 0.55);
+}
+.cv-focus-section {
+  border-radius: 3px;
+  background-color: rgba(14, 165, 233, 0.04);
+  box-shadow: 0 0 0 6px rgba(14, 165, 233, 0.04), 0 0 0 7px rgba(14, 165, 233, 0.3);
+}
+.cv-focus-bullet {
+  border-radius: 2px;
+  background-color: rgba(14, 165, 233, 0.12);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* PRINT ENGINE - PIXEL-PERFECT VECTOR EXPORT */
@@ -76,57 +170,87 @@ body {
     margin: 0;
   }
 
+  .cv-editable [data-edit-section]:hover,
+  .cv-editable [data-edit-item]:hover,
+  .cv-focus,
+  .cv-focus-section,
+  .cv-focus-bullet {
+    box-shadow: none !important;
+    background-color: transparent !important;
+  }
+
   html, body {
     background: #ffffff !important;
     color: #000000 !important;
     margin: 0 !important;
     padding: 0 !important;
-    width: 210mm !important;
+    width: var(--sheet-w) !important;
     height: auto !important;
+    min-height: 100% !important;
     overflow: visible !important;
   }
 
-  /* Reset all flex/overflow containers */
-  div, main, section {
-    overflow: visible !important;
+  /* Clear dark theme backgrounds on all container elements outside sheet */
+  body,
+  body div,
+  body main,
+  body section {
+    background-color: transparent !important;
+    box-shadow: none !important;
     max-height: none !important;
+    overflow: visible !important;
   }
 
-  /* Hide everything except CV sheet */
-  header,
+  /* Hide everything marked no-print, chrome bars, footers, etc. */
+  .no-print,
+  .print\:hidden,
+  header.no-print,
   nav,
   aside,
-  footer,
-  .no-print,
-  .print\:hidden {
+  footer {
     display: none !important;
   }
 
-  /* Reset preview wrappers */
-  .cv-preview-container, .cv-zoom-wrapper {
+  /* Reset and force-show preview wrappers that contain the printable sheet */
+  .cv-preview-container,
+  .cv-zoom-wrapper,
+  div:has(#cv-printable-sheet) {
+    display: block !important;
     margin: 0 !important;
     padding: 0 !important;
     transform: none !important;
     box-shadow: none !important;
-    width: 210mm !important;
+    width: var(--sheet-w) !important;
     height: auto !important;
-    display: block !important;
     overflow: visible !important;
+    background: transparent !important;
   }
 
-  .cv-sheet {
-    width: 210mm !important;
-    min-height: 297mm !important;
+  /* Force sheet styling */
+  .cv-sheet,
+  #cv-printable-sheet {
+    display: block !important;
+    width: var(--sheet-w) !important;
+    min-height: var(--sheet-h) !important;
+    background-color: #ffffff !important;
     box-shadow: none !important;
     border: none !important;
     margin: 0 !important;
-    padding: 10mm 12mm !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    page-break-after: always;
+    padding: 0 !important;
+    position: relative !important;
+    top: 0 !important;
+    left: 0 !important;
+    overflow: visible !important;
   }
 
-  * {
+  /* Ensure resume template header is always displayed */
+  #cv-printable-sheet header {
+    display: block !important;
+  }
+
+  /* Maintain exact print colors for badges, icons, borders, highlights */
+  #cv-printable-sheet,
+  #cv-printable-sheet * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }

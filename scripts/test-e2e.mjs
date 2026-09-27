@@ -3,8 +3,8 @@ import fs from "fs";
 import path from "path";
 
 const BRAVE_PATH = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser";
-const BASE_URL = "http://localhost:3001";
-const ARTIFACT_DIR = "/Users/toasty/.gemini/antigravity/brain/d8d3bf1b-2fa6-420e-b003-8eeb6607b4e9";
+const BASE_URL = process.env.BASE_URL || "http://localhost:3001";
+const ARTIFACT_DIR = process.env.ARTIFACT_DIR || "/Users/toasty/.gemini/antigravity/brain/d8d3bf1b-2fa6-420e-b003-8eeb6607b4e9";
 const SCREENSHOT_DIR = path.join(ARTIFACT_DIR, "screenshots");
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -34,7 +34,7 @@ async function runTests() {
     // ----------------------------------------------------
     // TEST 1: Landing Page
     // ----------------------------------------------------
-    console.log("📍 1. Testing Landing Page rendering (http://localhost:3001)...");
+    console.log(`📍 1. Testing Landing Page rendering (${BASE_URL})...`);
     await page.goto(BASE_URL, { waitUntil: "networkidle0" });
 
     // Assert Title
@@ -55,8 +55,7 @@ async function runTests() {
     // TEST 2: Navigation to App Dashboard
     // ----------------------------------------------------
     console.log("📍 2. Testing App Dashboard (/app)...");
-    await page.waitForSelector('a[href="/app"]', { timeout: 10000 });
-    await page.click('a[href="/app"]');
+    await page.goto(`${BASE_URL}/app`, { waitUntil: "networkidle0" });
     await page.waitForSelector("h1", { timeout: 10000 });
 
     const dashboardHeading = await page.$eval("h1", (el) => el.innerText);
@@ -73,20 +72,20 @@ async function runTests() {
     console.log("📍 3. Testing Create New CV Modal Flow...");
     await page.evaluate(() => {
       const buttons = Array.from(document.querySelectorAll("button"));
-      const btn = buttons.find((b) => b.textContent?.includes("Create New CV"));
+      const btn = buttons.find((b) => b.textContent?.trim() === "New CV");
       if (btn) btn.click();
     });
 
     // Wait for modal input
-    await page.waitForSelector("input[placeholder*='Senior Software Engineer']", { timeout: 3000 });
-    const nameInput = await page.$("input[placeholder*='Senior Software Engineer']");
+    await page.waitForSelector("input[placeholder*='Product Designer']", { timeout: 3000 });
+    const nameInput = await page.$("input[placeholder*='Product Designer']");
     await nameInput.click({ clickCount: 3 });
     await nameInput.type("Principal Platform Architect CV");
 
     // Click "Start Building"
     await page.evaluate(() => {
       const buttons = Array.from(document.querySelectorAll("button"));
-      const btn = buttons.find((b) => b.textContent?.includes("Start Building"));
+      const btn = buttons.find((b) => b.textContent?.trim() === "Create CV");
       if (btn) btn.click();
     });
 
@@ -105,7 +104,7 @@ async function runTests() {
     console.log(`   ✓ Candidate name in preview: "${initialName}"`);
 
     // Edit full name in form (select all first)
-    const fullNameInput = await page.$("input[placeholder='e.g. Alex Rivera']");
+    const fullNameInput = await page.$("input[placeholder='e.g. Jane Doe']");
     if (fullNameInput) {
       await fullNameInput.evaluate((el) => { el.value = ""; });
       await fullNameInput.type("Dr. Elena Rostova");
@@ -127,7 +126,9 @@ async function runTests() {
     // TEST 5: Section Reordering (Drag & Drop / Reorder)
     // ----------------------------------------------------
     console.log("📍 5. Testing Section Reordering...");
-    // Click down arrow on the first section (Summary) to move it below Experience
+    // Open the Organise dialog, then move the first section (Summary) below Experience
+    await page.click("button[aria-label='Reorder or hide sections']");
+    await page.waitForSelector("[role='dialog'] button[aria-label='Move section down']", { timeout: 3000 });
     const moved = await page.evaluate(() => {
       const buttons = Array.from(document.querySelectorAll("button[title='Move section down']"));
       if (buttons.length > 0) {
@@ -141,29 +142,27 @@ async function runTests() {
       await sleep(300);
       console.log("   ✓ Moved Summary section down below Experience");
     }
+    await page.keyboard.press("Escape");
+    await sleep(300);
 
     // ----------------------------------------------------
     // TEST 6: Template & Styling Switcher
     // ----------------------------------------------------
     console.log("📍 6. Testing Template Switching & Design Toolbar...");
-    // Click "Templates & Theme" tab
+    // Open the Design tab
     await page.evaluate(() => {
-      const buttons = Array.from(document.querySelectorAll("button"));
-      const tab = buttons.find((b) => b.textContent?.includes("Templates & Theme"));
-      if (tab) tab.click();
+      const radios = Array.from(document.querySelectorAll("[role='radio']"));
+      radios.find((b) => b.textContent?.trim() === "Design")?.click();
     });
-    await sleep(300);
+    await sleep(400);
 
-    // Click "Creative Grid" template
-    await page.evaluate(() => {
-      const buttons = Array.from(document.querySelectorAll("button"));
-      const btn = buttons.find((b) => b.textContent?.includes("Creative Grid"));
-      if (btn) btn.click();
-    });
-    console.log("   ✓ Switched to Creative Grid template");
+    // Pick the Creative template
+    await page.waitForSelector("button[role='radio'][aria-label^='Creative']", { timeout: 3000 });
+    await page.click("button[role='radio'][aria-label^='Creative']");
+    console.log("   ✓ Switched to Creative template");
 
     // Click Indigo Accent Color
-    const colorButtons = await page.$$("button[title='Indigo']");
+    const colorButtons = await page.$$("button[aria-label='Indigo']");
     if (colorButtons.length > 0) {
       await colorButtons[0].click();
       console.log("   ✓ Switched accent color to Indigo");

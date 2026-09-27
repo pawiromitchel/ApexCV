@@ -72,7 +72,7 @@ export const initialResumeData: ResumeData = {
     },
   ],
   skills: [
-    { id: "sk-1", name: "TypeScript / JavaScript", category: "Languages", level: 5 },
+    { id: "sk-1", name: "TypeScript / JavaScript", category: "Programming Languages", level: 5 },
     { id: "sk-2", name: "React / Next.js", category: "Frontend", level: 5 },
     { id: "sk-3", name: "Node.js & Go", category: "Backend", level: 5 },
     { id: "sk-4", name: "PostgreSQL & Redis", category: "Databases", level: 4 },
@@ -80,6 +80,10 @@ export const initialResumeData: ResumeData = {
     { id: "sk-6", name: "GraphQL & RESTful APIs", category: "Architecture", level: 5 },
     { id: "sk-7", name: "Tailwind CSS & Design Systems", category: "Frontend", level: 5 },
     { id: "sk-8", name: "CI/CD & Docker", category: "Cloud & DevOps", level: 4 },
+  ],
+  languages: [
+    { id: "lang-1", name: "English", proficiency: "Native / Bilingual", visible: true },
+    { id: "lang-2", name: "Spanish", proficiency: "Professional Working (B2)", visible: true },
   ],
   projects: [
     {
@@ -122,6 +126,7 @@ export const initialResumeData: ResumeData = {
     "summary",
     "experience",
     "skills",
+    "languages",
     "projects",
     "education",
     "certifications",
@@ -130,6 +135,7 @@ export const initialResumeData: ResumeData = {
     templateId: "modern-tech",
     fontFamily: "inter",
     fontSize: "base",
+    documentMargins: "standard",
     accentColor: "#0284c7", // Sky blue
     spacing: "standard",
     showAvatar: true,
@@ -157,6 +163,7 @@ export const emptyResumeData: ResumeData = {
   experience: [],
   education: [],
   skills: [],
+  languages: [],
   projects: [],
   certifications: [],
   customSections: [],
@@ -172,6 +179,7 @@ export const emptyResumeData: ResumeData = {
     templateId: "modern-tech",
     fontFamily: "inter",
     fontSize: "base",
+    documentMargins: "standard",
     accentColor: "#10b981", // Emerald
     spacing: "standard",
     showAvatar: false,

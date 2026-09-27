@@ -1,18 +1,18 @@
 # AGENTS.md — Agent & AI Guidelines for CV-Builder (ApexCV)
 
-This document provides complete, high-density architectural context and operational guidelines so AI agents (Gemini, Antigravity, Claude, Cursor) do not need to scrape or re-explore the codebase on each invocation.
+This document provides architectural context and operational guidelines.
 
 ---
 
 ## 1. Project Overview
 
 - **Project Name:** ApexCV / CV-Builder
-- **Domain:** Modern resume and CV authoring platform with real-time preview, ATS compliance, drag-and-drop section reordering, PDF importing, and vector PDF printing.
+- **Domain:** Resume and CV authoring platform with real-time preview, drag-and-drop section reordering, PDF importing, and vector PDF printing.
 - **Framework:** Next.js 14.2 (App Router)
-- **Runtime:** Node.js 22+ (MANDATORY: relies on Node 22's built-in `node:sqlite` via `DatabaseSync`)
+- **Runtime:** Node.js 22+ (relies on Node 22's built-in `node:sqlite` via `DatabaseSync`)
 - **Default Port:** `3001` (`npm run dev -p 3001`)
 - **Primary Styling:** Tailwind CSS 3.4 with custom typography and print styles
-- **State Management:** React local state + debounced (800ms) REST API autosave to SQLite
+- **State Management:** React local state + debounced REST API autosave to SQLite
 
 ---
 
@@ -24,10 +24,8 @@ This document provides complete, high-density architectural context and operatio
 | **Language** | TypeScript 5.7.2 | Strict typed interfaces (`lib/types.ts`) |
 | **Styling** | Tailwind CSS 3.4, `tailwind-merge`, `clsx` | Utility-first UI + print media formatting |
 | **Database** | `node:sqlite` (`DatabaseSync`) | Embedded SQLite database (zero external services) |
-| **PDF Parsing** | `pdf-parse` (1.1.1) + custom regex parser | Text extraction & heuristic resume parsing |
-| **PDF Export** | Browser native `@media print` (`window.print()`) | Crisp vector PDF export of `#cv-printable-sheet` |
-| **Icons** | `lucide-react` | Clean icon system |
-| **Testing** | `puppeteer-core` (25.11.0) | E2E browser automation & visual testing |
+| **PDF Parsing** | `pdf-parse` (1.1.1) | Text extraction & heuristic resume parsing |
+| **PDF Export** | Browser native `@media print` (`window.print()`) | Vector PDF export of `#cv-printable-sheet` |
 
 ---
 
@@ -35,156 +33,92 @@ This document provides complete, high-density architectural context and operatio
 
 ```
 cv-builder/
-├── AGENTS.md                  # This file: AI agent operational reference
-├── README.md                  # Human & developer documentation
-├── Dockerfile                 # Multi-stage Node 22 Alpine container
-├── docker-compose.yml         # Containerized production runtime
-├── package.json               # Scripts & dependencies
-├── tailwind.config.ts         # Tailwind palette, fonts & animations
-├── cv_builder.db              # Default local SQLite database file
+├── AGENTS.md                  
+├── README.md                  
 ├── app/
-│   ├── layout.tsx             # Root layout with Inter font & global styles
-│   ├── globals.css            # Base styles & @media print stylesheet
-│   ├── page.tsx               # Landing / Marketing page (ApexCV Showcase & Tiers)
+│   ├── page.tsx               # Landing / Marketing page
 │   ├── app/
-│   │   ├── page.tsx           # Dashboard: list CVs, search, create modal, PDF import modal
-│   │   └── [id]/
-│   │       └── page.tsx       # Live CV Editor page (fetches CV by id, renders CvEditor)
-│   └── api/
-│       ├── auth/
-│       │   └── claim/route.ts # POST: links guest CVs to a user ID/name in SQLite
-│       └── resumes/
-│           ├── route.ts       # GET (list all resumes), POST (create new resume)
-│           ├── [id]/
-│           │   ├── route.ts   # GET (fetch resume JSON), PUT (update), DELETE (remove)
-│           │   └── duplicate/
-│           │       └── route.ts # POST (clone resume with new ID and "(Copy)" title)
-│           └── parse-pdf/
-│               └── route.ts   # POST (multipart/form-data upload -> text parse -> ResumeData)
+│   │   ├── page.tsx           # Dashboard
+│   │   └── [id]/page.tsx      # Live CV Editor
+│   ├── view/
+│   │   └── [id]/page.tsx      # Public Shareable CV
+│   └── api/                   # REST endpoints (/api/resumes, /api/auth)
 ├── components/
-│   ├── editor/
-│   │   ├── CvEditor.tsx       # Core editor shell (state, tabs, autosave debounce, print)
-│   │   ├── SectionList.tsx    # Drag-and-drop / arrow reordering for sections
-│   │   ├── forms/             # Modular section form components
-│   │   │   ├── PersonalInfoForm.tsx
-│   │   │   ├── SummaryForm.tsx
-│   │   │   ├── ExperienceForm.tsx
-│   │   │   ├── EducationForm.tsx
-│   │   │   ├── SkillsForm.tsx
-│   │   │   ├── ProjectsForm.tsx
-│   │   │   └── CertificationsForm.tsx
-│   │   └── styling/
-│   │       └── ThemeToolbar.tsx # Template selector, font picker, accent colors, spacing
-│   └── preview/
-│       ├── CvPreview.tsx      # Sheet container (#cv-printable-sheet), zoom, template switch
-│       └── templates/         # 5 ATS & executive resume templates
-│           ├── ModernTechTemplate.tsx   # id: "modern-tech" (Software & tech)
-│           ├── ExecutiveTemplate.tsx    # id: "executive" (Serif, corporate leadership)
-│           ├── CreativeTemplate.tsx     # id: "creative" (Header banner, badges)
-│           ├── SidebarTemplate.tsx      # id: "sidebar" (Two-column layout)
-│           └── AtsClassicTemplate.tsx   # id: "ats-classic" (Harvard style, 100% ATS)
+│   ├── ui/                    # Reusable UI components (Input, Textarea, Label, Button)
+│   ├── editor/                # Core editor shell (CvEditor, SectionList, styling, forms)
+│   │   └── forms/             # Forms for sections (PersonalInfo, Experience, etc.)
+│   └── preview/               # Print-ready preview (CvPreview, templates)
 ├── lib/
-│   ├── types.ts               # Core TypeScript data structures & types
-│   ├── db.ts                  # SQLite initialization, queries, and upsert helpers
-│   ├── sampleData.ts          # Default seed data (Alex Rivera) & emptyResumeData
-│   └── pdfParser.ts           # Heuristic resume extractor from plain PDF text
-└── scripts/
-    ├── test-e2e.mjs           # Puppeteer E2E tests (landing, dashboard, editor, themes)
-    └── test-pdf-import.mjs    # Puppeteer tests for PDF upload & parsing flow
+│   ├── db.ts                  # SQLite initialization and queries
+│   ├── types.ts               # Core TS data structures
+│   └── utils.ts               # Utility functions (cn for tailwind classes)
+└── scripts/                   # Puppeteer testing scripts
 ```
 
 ---
 
 ## 4. Key Data Models (`lib/types.ts`)
 
-### `ResumeData` (Core Document)
-```typescript
-export interface ResumeData {
-  id: string;                      // e.g. "cv_1710000000_abcde"
-  userId?: string;                 // optional owner identifier
-  title: string;                   // resume document title
-  personalInfo: PersonalInfo;      // fullName, jobTitle, email, phone, location, links, avatarUrl
-  summary: string;                 // markdown/plain summary text
-  experience: ExperienceItem[];    // role, company, location, startDate, endDate, current, bullets[]
-  education: EducationItem[];      // degree, institution, location, startDate, endDate, gpa, honors
-  skills: SkillItem[];             // name, category, level (1-5)
-  projects: ProjectItem[];         // name, description, techStack[], link, github
-  certifications: CertificationItem[]; // name, issuer, date, url
-  customSections: CustomSection[]; // flexible additional sections
-  sectionOrder: string[];          // e.g. ['summary', 'experience', 'education', 'skills', ...]
-  themeConfig: ThemeConfig;        // templateId, fontFamily, fontSize, accentColor, spacing, etc.
-  createdAt: string;               // ISO timestamp
-  updatedAt: string;               // ISO timestamp
-}
-```
-
-### `ThemeConfig`
-- `templateId`: `"modern-tech"` | `"executive"` | `"creative"` | `"sidebar"` | `"ats-classic"`
-- `fontFamily`: `"inter"` | `"merriweather"` | `"roboto-mono"` | `"playfair"` | `"plus-jakarta"`
-- `spacing`: `"compact"` | `"standard"` | `"spacious"`
-- `fontSize`: `"sm"` | `"base"` | `"lg"`
-- `accentColor`: Hex color (e.g. `"#0284c7"`, `"#0f172a"`, `"#4f46e5"`)
-- `showAvatar`: boolean
-- `showIcons`: boolean
+Refer to `lib/types.ts` for detailed structures of `ResumeData`, `ThemeConfig`, and section items (`ExperienceItem`, `EducationItem`, etc.). The core document uses an array of section keys (`sectionOrder`) to determine rendering hierarchy.
 
 ---
 
 ## 5. Database Architecture (`lib/db.ts`)
 
-- Uses Node 22 built-in `node:sqlite` (`DatabaseSync`).
-- Database location: `process.env.DB_PATH || path.join(process.cwd(), "cv_builder.db")`.
-- Tables:
-  1. `users (id TEXT PRIMARY KEY, name TEXT NOT NULL, email TEXT, created_at TEXT NOT NULL)`
-  2. `resumes (id TEXT PRIMARY KEY, user_id TEXT, title TEXT NOT NULL, data TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)`
-- On first startup, if `resumes` table is empty, seeds default resume from `lib/sampleData.ts`.
+- Uses Node 22 built-in `node:sqlite`.
+- Database location: `process.env.DB_PATH` or `cv_builder.db` at project root.
+- Tables: `users` and `resumes`.
+- Ownership lives in `resumes.user_id` (the anonymous device ID). Owner-facing reads go through `getOwnedResume`; public reads go through `getPublicResume` (share must be enabled, never returns the owner ID).
 
 ---
 
-## 6. Developer & Testing Commands
+## 5b. UI System (theme, components, motion)
 
-```bash
-# Run local dev server on port 3001
-npm run dev
-
-# Production build
-npm run build
-
-# Start production server on port 3001
-npm run start
-
-# Run ESLint
-npm run lint
-
-# Run automated Puppeteer E2E tests (server must be running on localhost:3001)
-node scripts/test-e2e.mjs
-
-# Run PDF import tests (server must be running on localhost:3001)
-node scripts/test-pdf-import.mjs
-```
+- **Theme tokens:** colours are CSS variables in `app/globals.css` (`:root` = light, `.dark` = dark) exposed as Tailwind colours: `bg-canvas`, `bg-surface`/`-2`/`-3`, `border-line`/`-strong`, `text-fg`/`-secondary`/`-muted`/`-subtle`, `bg-primary`/`text-primary-fg`, `success`, `warning`, `danger`. **Don't use raw `slate-*`/`sky-*` in app chrome**; they won't follow the theme. The CV templates (`components/preview/templates/`) are paper and intentionally use fixed colours.
+- **Light/dark:** `components/theme/ThemeProvider.tsx` + the pre-paint script in `lib/themeScript.ts`. Use `<ThemeToggle />` / `<ThemeSelect />`.
+- **Shared components** (`components/ui/`): `Button`/`IconButton`/`buttonVariants`, `Input`, `Textarea` (auto-grow), `Select`, `Field` (label + hint + error wiring), `Switch`, `Checkbox`, `SegmentedControl`, `Modal` (focus trap, Escape, bottom sheet on mobile), `Popover`/`Menu`, `Toast` (`useToast`, supports Undo actions), `Collapse`, `Badge`, `EmptyState`. Build new UI from these instead of one-off markup.
+- **Editor building blocks** (`components/editor/`): `ItemCard` + `SectionHeader` for every repeatable section, `useItemAccordion` for open/focus state, `sections.ts` as the single source of section names/icons.
+- **Motion:** use `motion/react` with the presets in `lib/motion.ts`. `MotionConfig reducedMotion="user"` is set globally. Above-the-fold landing content uses CSS keyframes (`animate-hero-in`) so it shows before hydration.
+- **Click-to-edit:** templates tag elements with `data-edit-section` / `data-edit-item`; keep these when editing templates.
 
 ---
 
-## 7. Critical Architectural Rules & Agent Guidelines
+## 6. Critical Architectural Rules
 
 1. **Client vs Server Isolation for SQLite:**
-   - `lib/db.ts` uses `node:sqlite` which is a **Node.js runtime module**.
-   - **NEVER** import `lib/db.ts` directly inside components marked with `"use client"`.
-   - Client components must communicate with database via API routes (`/api/resumes/**`).
+   - `lib/db.ts` uses `node:sqlite`. **NEVER** import it directly inside components marked with `"use client"`.
+   - Client components must communicate with the database via API routes (`/api/resumes/**`).
 
 2. **Print & PDF Generation:**
-   - Vector PDF generation uses native browser print (`window.print()`).
-   - `#cv-printable-sheet` in `components/preview/CvPreview.tsx` is the sole printable element.
-   - All navigation bars, controls, toolbars, and buttons must include the `no-print` CSS class (defined in `app/globals.css`).
-   - Do NOT delete or rename `#cv-printable-sheet` or `.no-print`.
+   - Uses native browser print. `#cv-printable-sheet` is the sole printable element.
+   - All navigation bars, controls, toolbars, and buttons include the `no-print` CSS class.
 
 3. **Port 3001 Convention:**
-   - Next.js is configured to run on port `3001` (to prevent conflicts with common 3000 services).
-   - All tests, docker setups, and internal links assume `localhost:3001`.
+   - The application and E2E tests assume port `3001`.
 
-4. **Section Reordering Logic:**
-   - `resume.sectionOrder` is an array of section keys (`"summary"`, `"experience"`, `"education"`, `"skills"`, `"projects"`, `"certifications"`).
-   - Templates dynamically loop through `sectionOrder` to determine rendering hierarchy.
+---
 
-5. **PDF Parser Extensibility (`lib/pdfParser.ts`):**
-   - Employs regex matching for emails, phones, URLs, dates, and common resume section headers (e.g. `EXPERIENCE`, `EDUCATION`, `SKILLS`).
-   - When improving parsing, keep fallback safety so partially matched documents still populate gracefully without crashing.
+## 7. Docker & Deployment Guidelines
+
+The application is containerized using Docker and Docker Compose. It leverages Next.js `standalone` output for minimal image sizes.
+
+### Important Docker Routing Rule
+- **Never use `WORKDIR /app`** for a Next.js App Router project inside the Dockerfile. It causes internal path resolution failures in production builds (stripping `/app` prefixes and confusing `/app/app/page.tsx` with `/app/page.tsx`).
+- Always use `WORKDIR /usr/src/app` or similar.
+
+### How to Build & Deploy
+
+To build and run the Docker container in the background, use the following commands:
+
+```bash
+# 1. Build the Docker image
+docker compose build apexcv
+
+# 2. Run the container in detached mode
+docker compose up -d apexcv
+
+# 3. Check logs if needed
+docker compose logs -f apexcv
+```
+
+This will spin up the `cv-builder-apexcv` image and expose the app on port `3001` (or whatever is defined in `docker-compose.yml`).

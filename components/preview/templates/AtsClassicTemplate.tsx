@@ -1,14 +1,40 @@
-"use client";
-
+import { ExperienceEntries, contactLines } from "./ExperienceEntries";
 import React from "react";
-import { ResumeData } from "@/lib/types";
+import { ResumeData, CustomSection, FocusedTarget } from "@/lib/types";
+import { getSpacingStyles } from "@/lib/templateSpacing";
+import { normalizeUrl, cleanUrl } from "@/lib/utils";
+import { formatMonthYear } from "@/lib/dateValidation";
+import { Award, ExternalLink } from "lucide-react";
 
 interface TemplateProps {
   data: ResumeData;
+  focusedTarget?: FocusedTarget | null;
 }
 
-export function AtsClassicTemplate({ data }: TemplateProps) {
-  const { personalInfo, summary, experience, education, skills, projects, certifications, customSections, sectionOrder } = data;
+export function AtsClassicTemplate({ data, focusedTarget }: TemplateProps) {
+  const {
+    personalInfo,
+    summary,
+    experience,
+    education,
+    skills,
+    languages,
+    projects,
+    certifications,
+    customSections,
+    sectionOrder,
+    themeConfig,
+  } = data;
+  const spacing = getSpacingStyles(themeConfig?.spacing, themeConfig?.documentMargins);
+
+  const getFontSizeClass = () => {
+    switch (themeConfig?.fontSize) {
+      case "sm": return "text-[0.7rem] sm:text-xs";
+      case "lg": return "text-sm sm:text-base";
+      case "base":
+      default: return "text-xs sm:text-sm";
+    }
+  };
 
   // Group skills by category for clear ATS reading
   const skillsByCategory = skills.reduce((acc, skill) => {
@@ -19,9 +45,9 @@ export function AtsClassicTemplate({ data }: TemplateProps) {
   }, {} as Record<string, string[]>);
 
   return (
-    <div className="p-8 sm:p-10 text-slate-900 bg-white min-h-[297mm] font-serif leading-relaxed text-xs">
+    <div className={`${spacing.containerPadding} ${getFontSizeClass()} text-slate-900 bg-white min-h-[var(--sheet-h,297mm)] font-serif leading-relaxed`}>
       {/* ATS Standard Centered Header */}
-      <header className="text-center border-b border-slate-900 pb-3 mb-4">
+      <header data-edit-section="personal" className={`text-center border-b border-slate-900 ${spacing.headerMargin}`}>
         <h1 className="text-2xl font-bold uppercase tracking-wider text-slate-950">
           {personalInfo.fullName || "YOUR FULL NAME"}
         </h1>
@@ -31,34 +57,27 @@ export function AtsClassicTemplate({ data }: TemplateProps) {
           </div>
         )}
 
-        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 mt-1.5 text-[11px] text-slate-800">
-          {personalInfo.location && <span>{personalInfo.location}</span>}
-          {personalInfo.location && personalInfo.phone && <span>|</span>}
-          {personalInfo.phone && <span>{personalInfo.phone}</span>}
-          {personalInfo.phone && personalInfo.email && <span>|</span>}
-          {personalInfo.email && <span>{personalInfo.email}</span>}
-          {personalInfo.linkedin && (
-            <>
-              <span>|</span>
-              <span>{personalInfo.linkedin.replace(/^https?:\/\//, "")}</span>
-            </>
-          )}
-          {personalInfo.github && (
-            <>
-              <span>|</span>
-              <span>{personalInfo.github.replace(/^https?:\/\//, "")}</span>
-            </>
-          )}
+        <div className="mt-1.5 space-y-0.5 text-[11px] text-slate-800">
+          {contactLines(personalInfo).map((line) => (
+            <div key={line.join()} className="flex flex-wrap items-center justify-center gap-x-2">
+              {line.map((part, i) => (
+                <React.Fragment key={part}>
+                  {i > 0 && <span aria-hidden>|</span>}
+                  <span>{part}</span>
+                </React.Fragment>
+              ))}
+            </div>
+          ))}
         </div>
       </header>
 
       {/* Content in standardized order */}
-      <div className="space-y-3.5">
+      <div className={spacing.sectionGap}>
         {sectionOrder.map((sectionKey) => {
           if (sectionKey === "summary" && summary) {
             return (
-              <section key="summary">
-                <h2 className="font-bold text-xs uppercase tracking-wider border-b border-slate-900 pb-0.5 mb-1.5 text-slate-950">
+              <section key="summary" data-edit-section="summary">
+                <h2 className={`font-bold text-xs uppercase tracking-wider border-b border-slate-900 pb-0.5 ${spacing.sectionHeaderMargin} text-slate-950`}>
                   Professional Summary
                 </h2>
                 <p className="text-slate-800 text-justify text-[11.5px] leading-normal">
@@ -69,81 +88,65 @@ export function AtsClassicTemplate({ data }: TemplateProps) {
           }
 
           if (sectionKey === "experience" && experience?.length > 0) {
+            const isSectionFocused = focusedTarget?.section === "experience";
             return (
-              <section key="experience">
-                <h2 className="font-bold text-xs uppercase tracking-wider border-b border-slate-900 pb-0.5 mb-2 text-slate-950">
+              <section key="experience" data-edit-section="experience" className={`transition-all duration-300 rounded ${isSectionFocused && !focusedTarget?.itemId ? "cv-focus" : ""}`}>
+                <h2 className={`font-bold text-xs uppercase tracking-wider border-b border-slate-900 pb-0.5 ${spacing.sectionHeaderMargin} text-slate-950`}>
                   Professional Experience
                 </h2>
-                <div className="space-y-3">
-                  {experience.map((exp) => (
-                    <div key={exp.id}>
-                      <div className="flex justify-between items-baseline font-bold text-slate-950">
-                        <span>{exp.company}</span>
-                        <span className="font-normal text-[11px] text-slate-800">
-                          {exp.startDate} – {exp.current ? "Present" : exp.endDate}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-baseline italic text-slate-800 text-[11.5px] mb-1">
-                        <span>{exp.role}</span>
-                        {exp.location && <span>{exp.location}</span>}
-                      </div>
-                      {exp.bullets?.length > 0 && (
-                        <ul className="list-disc ml-5 space-y-0.5 text-slate-800 text-[11px]">
-                          {exp.bullets.map((b, i) => (
-                            <li key={i} className="leading-snug">
-                              {b}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  ))}
+                <div className={spacing.itemGap}>
+                  <ExperienceEntries experience={experience} focusedTarget={focusedTarget} style={{ accent: "#0f172a", density: themeConfig?.spacing, companyFirst: true, role: "text-[11.5px] italic text-slate-800", groupRole: "text-[11.5px] font-semibold text-slate-900", company: "", groupCompany: "text-[12.5px] font-bold text-slate-950", date: "text-[11px] text-slate-800", location: "text-[11.5px] italic text-slate-800", bullets: "space-y-0.5 text-[11px] text-slate-800" }} />
                 </div>
               </section>
             );
           }
 
           if (sectionKey === "education" && education?.length > 0) {
+            const isSectionFocused = focusedTarget?.section === "education";
             return (
-              <section key="education">
-                <h2 className="font-bold text-xs uppercase tracking-wider border-b border-slate-900 pb-0.5 mb-2 text-slate-950">
+              <section key="education" data-edit-section="education" className={`transition-all duration-300 rounded ${isSectionFocused && !focusedTarget?.itemId ? "cv-focus" : ""}`}>
+                <h2 className={`font-bold text-xs uppercase tracking-wider border-b border-slate-900 pb-0.5 ${spacing.sectionHeaderMargin} text-slate-950`}>
                   Education
                 </h2>
-                <div className="space-y-2">
-                  {education.map((edu) => (
-                    <div key={edu.id}>
-                      <div className="flex justify-between items-baseline font-bold text-slate-950">
-                        <span>{edu.institution}</span>
-                        <span className="font-normal text-[11px] text-slate-800">
-                          {edu.startDate} – {edu.endDate}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-baseline italic text-slate-800 text-[11.5px]">
-                        <span>{edu.degree}</span>
-                        {edu.location && <span>{edu.location}</span>}
-                      </div>
-                      {(edu.gpa || edu.honors) && (
-                        <div className="text-[11px] text-slate-700 mt-0.5">
-                          {edu.honors} {edu.gpa && `• GPA: ${edu.gpa}`}
+                <div className={spacing.itemGap}>
+                  {education.map((edu) => {
+                    const isItemFocused = focusedTarget?.itemId === edu.id;
+                    return (
+                      <div key={edu.id} data-edit-item={edu.id} className={`transition-all duration-300 rounded ${isItemFocused ? "cv-focus" : ""}`}>
+                        <div className="flex justify-between items-baseline gap-2 font-bold text-slate-950">
+                          <span className="min-w-0 flex-1 truncate">{edu.institution}</span>
+                          <span className="font-normal text-[11px] text-slate-800 whitespace-nowrap flex-shrink-0 ml-auto">
+                            {formatMonthYear(edu.startDate)} – {formatMonthYear(edu.endDate)}
+                          </span>
                         </div>
-                      )}
-                    </div>
-                  ))}
+                        <div className="flex justify-between items-baseline italic text-slate-800 text-[11.5px]">
+                          <span className="min-w-0 flex-1 truncate">{edu.degree}</span>
+                          {edu.location && <span className="whitespace-nowrap flex-shrink-0 ml-auto">{edu.location}</span>}
+                        </div>
+                        {(edu.gpa || edu.honors) && (
+                          <div className="text-[11px] text-slate-700 mt-0.5">
+                            {edu.honors} {edu.gpa && `• GPA: ${edu.gpa}`}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </section>
             );
           }
 
           if (sectionKey === "skills" && skills?.length > 0) {
+            const isSectionFocused = focusedTarget?.section === "skills";
             return (
-              <section key="skills">
+              <section key="skills" data-edit-section="skills" className={`transition-all duration-300 rounded ${isSectionFocused ? "cv-focus" : ""}`}>
                 <h2 className="font-bold text-xs uppercase tracking-wider border-b border-slate-900 pb-0.5 mb-1.5 text-slate-950">
                   Skills & Competencies
                 </h2>
                 <div className="space-y-1 text-[11.5px]">
                   {Object.entries(skillsByCategory).map(([cat, list]) => (
                     <div key={cat} className="flex">
-                      <span className="font-bold text-slate-900 w-36 flex-shrink-0">
+                      <span className="font-bold text-slate-900 w-44 flex-shrink-0">
                         {cat}:
                       </span>
                       <span className="text-slate-800">{list.join(", ")}</span>
@@ -155,47 +158,171 @@ export function AtsClassicTemplate({ data }: TemplateProps) {
           }
 
           if (sectionKey === "projects" && projects?.length > 0) {
+            const isSectionFocused = focusedTarget?.section === "projects";
             return (
-              <section key="projects">
-                <h2 className="font-bold text-xs uppercase tracking-wider border-b border-slate-900 pb-0.5 mb-2 text-slate-950">
+              <section key="projects" data-edit-section="projects" className={`transition-all duration-300 rounded ${isSectionFocused && !focusedTarget?.itemId ? "cv-focus" : ""}`}>
+                <h2 className={`font-bold text-xs uppercase tracking-wider border-b border-slate-900 pb-0.5 ${spacing.sectionHeaderMargin} text-slate-950`}>
                   Key Projects
                 </h2>
                 <div className="space-y-2">
-                  {projects.map((proj) => (
-                    <div key={proj.id} className="text-[11.5px]">
-                      <div className="font-bold text-slate-950">
-                        {proj.name}
-                        {proj.techStack?.length > 0 && (
-                          <span className="font-normal text-slate-600 ml-1.5">
-                            ({proj.techStack.join(", ")})
-                          </span>
-                        )}
+                  {projects.map((proj) => {
+                    const isItemFocused = focusedTarget?.itemId === proj.id;
+                    return (
+                      <div key={proj.id} data-edit-item={proj.id} className={`text-[11.5px] transition-all duration-300 rounded ${isItemFocused ? "cv-focus" : ""}`}>
+                        <div className="flex justify-between items-baseline gap-2">
+                          <div className="font-bold text-slate-950 min-w-0 flex-1 truncate">
+                            {proj.name}
+                            {proj.techStack?.length > 0 && (
+                              <span className="font-normal text-slate-600 ml-1.5">
+                                ({proj.techStack.join(", ")})
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 text-[11px] whitespace-nowrap flex-shrink-0 ml-auto">
+                            {proj.link && (
+                              <a
+                                href={normalizeUrl(proj.link)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-slate-700 hover:text-slate-950 underline"
+                                title={proj.link}
+                              >
+                                {cleanUrl(proj.link)}
+                              </a>
+                            )}
+                            {proj.link && proj.github && <span>•</span>}
+                            {proj.github && (
+                              <a
+                                href={normalizeUrl(proj.github)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-slate-700 hover:text-slate-950 underline"
+                                title={proj.github}
+                              >
+                                GitHub
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-slate-800 leading-snug">
+                          {proj.description}
+                        </div>
                       </div>
-                      <div className="text-slate-800 leading-snug">
-                        {proj.description}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             );
           }
 
           if (sectionKey === "certifications" && certifications?.length > 0) {
+            const isSectionFocused = focusedTarget?.section === "certifications";
             return (
-              <section key="certifications">
-                <h2 className="font-bold text-xs uppercase tracking-wider border-b border-slate-900 pb-0.5 mb-1.5 text-slate-950">
-                  Certifications
+              <section key="certifications" data-edit-section="certifications" className={`transition-all duration-300 rounded ${isSectionFocused && !focusedTarget?.itemId ? "cv-focus" : ""}`}>
+                <h2 className={`font-bold text-xs uppercase tracking-wider border-b border-slate-900 pb-0.5 ${spacing.sectionHeaderMargin} text-slate-950`}>
+                  Certifications & Honors
                 </h2>
-                <ul className="list-disc ml-5 space-y-0.5 text-[11px] text-slate-800">
-                  {certifications.map((c) => (
-                    <li key={c.id}>
-                      <span className="font-semibold">{c.name}</span> – {c.issuer} ({c.date})
-                    </li>
-                  ))}
-                </ul>
+                <div className="space-y-1.5">
+                  {certifications.map((c) => {
+                    const isItemFocused = focusedTarget?.itemId === c.id;
+                    return (
+                      <div key={c.id} data-edit-item={c.id} className={`flex items-baseline justify-between gap-2 text-[11.5px] transition-all duration-300 rounded ${isItemFocused ? "cv-focus" : ""}`}>
+                        <div className="min-w-0 flex-1 truncate">
+                          <span className="font-semibold text-slate-900">{c.name || c.issuer}</span>
+                          {c.name && c.issuer && <span className="text-slate-600"> — {c.issuer}</span>}
+                        </div>
+                        <div className="flex items-center gap-2 whitespace-nowrap flex-shrink-0 ml-auto text-[11px]">
+                          {c.date && <span className="text-slate-600">{formatMonthYear(c.date)}</span>}
+                          {c.url && (
+                            <a
+                              href={normalizeUrl(c.url)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-slate-700 hover:text-slate-950 underline text-[10px]"
+                            >
+                              Verify
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </section>
             );
+          }
+
+          if (sectionKey === "languages" && languages && languages.length > 0) {
+            return (
+              <section key="languages" data-edit-section="languages">
+                <h2 className={`font-bold text-xs uppercase tracking-wider border-b border-slate-900 pb-0.5 ${spacing.sectionHeaderMargin} text-slate-950`}>
+                  Languages
+                </h2>
+                <div className="text-[11.5px] text-slate-800">
+                  {languages.map((l, i) => (
+                    <span key={l.id} data-edit-item={l.id}>
+                      <span className="font-semibold text-slate-900">{l.name}</span>
+                      {l.proficiency && <span className="text-slate-600"> ({l.proficiency})</span>}
+                      {i < languages.length - 1 ? ", " : ""}
+                    </span>
+                  ))}
+                </div>
+              </section>
+            );
+          }
+
+          // Custom sections
+          const renderCustomSection = (custom: CustomSection) => {
+            if (!custom || !custom.items || custom.items.length === 0) return null;
+            const isSectionFocused = focusedTarget?.section === custom.id || focusedTarget?.section === "customSections";
+            return (
+              <section key={custom.id} data-edit-section={custom.id} className={`transition-all duration-300 rounded ${isSectionFocused && !focusedTarget?.itemId ? "cv-focus" : ""}`}>
+                <h2 className={`font-bold text-xs uppercase tracking-wider border-b border-slate-900 pb-0.5 ${spacing.sectionHeaderMargin} text-slate-950`}>
+                  {custom.title}
+                </h2>
+                <div className={spacing.itemGap}>
+                  {custom.items.map((item) => {
+                    const isItemFocused = focusedTarget?.itemId === item.id;
+                    return (
+                      <div key={item.id} data-edit-item={item.id} className={`text-[11.5px] transition-all duration-300 rounded ${isItemFocused ? "cv-focus" : ""}`}>
+                        <div className="flex justify-between items-baseline gap-2 font-bold text-slate-900">
+                          <span className="min-w-0 flex-1 truncate">{item.title}</span>
+                          {item.date && (
+                            <span className="font-normal text-[11px] text-slate-700 whitespace-nowrap flex-shrink-0 ml-auto">
+                              {formatMonthYear(item.date)}
+                            </span>
+                          )}
+                        </div>
+                        {item.subtitle && (
+                          <div className="italic text-slate-800 text-[11px]">
+                            {item.subtitle}
+                          </div>
+                        )}
+                        {item.description && (
+                          <div className="text-slate-800 leading-snug mt-0.5">
+                            {item.description}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          };
+
+          if (sectionKey === "customSections" || sectionKey === "custom") {
+            if (!customSections || customSections.length === 0) return null;
+            return (
+              <React.Fragment key={sectionKey}>
+                {customSections.map((custom) => renderCustomSection(custom))}
+              </React.Fragment>
+            );
+          }
+
+          const matchedCustom = customSections?.find((c) => c.id === sectionKey);
+          if (matchedCustom) {
+            return renderCustomSection(matchedCustom);
           }
 
           return null;

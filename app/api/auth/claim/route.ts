@@ -1,21 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
-import { claimResumesForUser } from "@/lib/db";
+import { setDeviceDisplayName } from "@/lib/db";
+import { getOrCreateDeviceId, attachDeviceIdCookie } from "@/lib/deviceAuth";
 
+// Sets a display name for the caller's device workspace. Ownership never changes here.
 export async function POST(request: NextRequest) {
   try {
-    const { userId, userName, resumeIds } = await request.json();
-    if (!userId || !userName) {
+    const { deviceId, isNew } = getOrCreateDeviceId(request);
+    const { userName } = await request.json();
+    const name = typeof userName === "string" ? userName.trim().slice(0, 100) : "";
+    if (!name) {
       return NextResponse.json(
-        { success: false, error: "userId and userName are required" },
+        { success: false, error: "userName is required" },
         { status: 400 }
       );
     }
 
-    claimResumesForUser(userId, userName, Array.isArray(resumeIds) ? resumeIds : []);
-    return NextResponse.json({ success: true });
+    setDeviceDisplayName(deviceId, name);
+    const response = NextResponse.json({ success: true });
+    if (isNew) {
+      attachDeviceIdCookie(response, deviceId);
+    }
+    return response;
   } catch (error: any) {
     return NextResponse.json(
-      { success: false, error: error?.message || "Failed to claim resumes" },
+      { success: false, error: error?.message || "Failed to save profile" },
       { status: 500 }
     );
   }

@@ -1,202 +1,231 @@
 "use client";
 
-import React from "react";
-import { ThemeConfig, TemplateId, FontFamily, FontSizeScale, SpacingScale } from "@/lib/types";
-import { Palette, Type, Sliders, Check, UserCheck, ShieldCheck } from "lucide-react";
+import React, { useDeferredValue, useEffect, useState } from "react";
+import { motion } from "motion/react";
+import { Check } from "lucide-react";
+import { FontFamily, FontSizeScale, PageSize, ResumeData, SpacingScale, TemplateId, ThemeConfig } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import { spring } from "@/lib/motion";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { TemplateOption } from "@/components/preview/TemplateOption";
 
 interface ThemeToolbarProps {
-  theme: ThemeConfig;
+  data: ResumeData;
   onChange: (updated: Partial<ThemeConfig>) => void;
 }
 
-const templates: Array<{ id: TemplateId; name: string; tag: string; desc: string }> = [
-  { id: "modern-tech", name: "Modern Tech", tag: "POPULAR", desc: "Clean layout with tech pills & crisp dates" },
-  { id: "executive", name: "Executive Classic", tag: "FORMAL", desc: "Refined corporate authority & serif profile" },
-  { id: "creative", name: "Creative Grid", tag: "BOLD", desc: "Dynamic accent banner & portfolio showcase" },
-  { id: "sidebar", name: "Compact Sidebar", tag: "HIGH DENSITY", desc: "Structured 2-column with left skills bar" },
-  { id: "ats-classic", name: "Harvard ATS", tag: "100% ATS", desc: "Zero-fail parsable standard single-column" },
+export const TEMPLATES: Array<{ id: TemplateId; name: string; desc: string }> = [
+  { id: "modern-tech", name: "Modern", desc: "Clean, with skill pills" },
+  { id: "executive", name: "Executive", desc: "Formal serif, centred header" },
+  { id: "creative", name: "Creative", desc: "Bold colour banner" },
+  { id: "sidebar", name: "Sidebar", desc: "Two columns, dense" },
+  { id: "ats-classic", name: "Classic ATS", desc: "Plain single column" },
 ];
 
-const fonts: Array<{ id: FontFamily; label: string; previewClass: string }> = [
-  { id: "inter", label: "Inter (Modern Sans)", previewClass: "font-sans" },
-  { id: "merriweather", label: "Merriweather (Classic Serif)", previewClass: "font-serif" },
-  { id: "roboto-mono", label: "Roboto Mono (Code/Tech)", previewClass: "font-mono" },
-  { id: "plus-jakarta", label: "Plus Jakarta (Geometric)", previewClass: "font-sans font-semibold" },
-  { id: "playfair", label: "Playfair (Editorial)", previewClass: "font-serif tracking-wider" },
+const FONTS: Array<{ id: FontFamily; label: string; sample: string; className: string }> = [
+  { id: "inter", label: "Inter", sample: "Modern sans", className: "font-sans" },
+  { id: "plus-jakarta", label: "Plus Jakarta", sample: "Geometric sans", className: "font-[family-name:var(--font-plus-jakarta)]" },
+  { id: "merriweather", label: "Merriweather", sample: "Classic serif", className: "font-serif" },
+  { id: "playfair", label: "Playfair", sample: "Editorial serif", className: "font-[family-name:var(--font-playfair)]" },
+  { id: "roboto-mono", label: "Roboto Mono", sample: "Monospace", className: "font-mono" },
 ];
 
-const colorPresets = [
-  { name: "Sky Blue", hex: "#0284c7" },
-  { name: "Emerald", hex: "#10b981" },
-  { name: "Indigo", hex: "#6366f1" },
-  { name: "Rose", hex: "#f43f5e" },
-  { name: "Teal", hex: "#0f766e" },
-  { name: "Amber", hex: "#d97706" },
+const COLORS = [
+  { name: "Blue", hex: "#0284c7" },
+  { name: "Indigo", hex: "#4f46e5" },
   { name: "Violet", hex: "#7c3aed" },
+  { name: "Rose", hex: "#e11d48" },
+  { name: "Amber", hex: "#d97706" },
+  { name: "Emerald", hex: "#059669" },
+  { name: "Teal", hex: "#0f766e" },
   { name: "Slate", hex: "#334155" },
 ];
 
-export function ThemeToolbar({ theme, onChange }: ThemeToolbarProps) {
+function Group({ title, children, aside }: { title: string; children: React.ReactNode; aside?: React.ReactNode }) {
   return (
-    <div className="space-y-6">
-      {/* 1. Template Selector */}
-      <div>
-        <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 mb-2.5">
-          <Palette className="w-3.5 h-3.5 text-sky-400" />
-          <span>Select CV Template ({templates.length} Styles)</span>
-        </label>
-        <div className="grid grid-cols-1 gap-2">
-          {templates.map((tmpl) => {
-            const isSelected = theme.templateId === tmpl.id;
+    <section className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-fg">{title}</h3>
+        {aside}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+export function ThemeToolbar({ data, onChange }: ThemeToolbarProps) {
+  const theme = data.themeConfig;
+  // Thumbnails re-render with the CV; defer so typing elsewhere never waits on them
+  const deferred = useDeferredValue(data);
+  const [hex, setHex] = useState(theme.accentColor || "#0284c7");
+  useEffect(() => setHex(theme.accentColor || "#0284c7"), [theme.accentColor]);
+
+  const isPreset = COLORS.some((c) => c.hex.toLowerCase() === theme.accentColor?.toLowerCase());
+
+  return (
+    <div className="space-y-8 pb-6">
+      <Group title="Template">
+        <div role="radiogroup" aria-label="Template" className="grid grid-cols-2 gap-3 xl:grid-cols-3">
+          {TEMPLATES.map((t) => (
+            <TemplateOption
+              key={t.id}
+              data={deferred}
+              templateId={t.id}
+              name={t.name}
+              description={t.desc}
+              active={theme.templateId === t.id}
+              onSelect={() => onChange({ templateId: t.id })}
+              checkLayoutId="template-check"
+            />
+          ))}
+        </div>
+      </Group>
+
+      <Group title="Accent colour">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {COLORS.map((c) => {
+            const active = theme.accentColor?.toLowerCase() === c.hex.toLowerCase();
             return (
               <button
-                key={tmpl.id}
+                key={c.hex}
                 type="button"
-                onClick={() => onChange({ templateId: tmpl.id })}
-                className={`flex items-center justify-between p-3 rounded-xl border text-left transition-all ${
-                  isSelected
-                    ? "bg-slate-800/90 border-sky-500 shadow-md shadow-sky-500/10 ring-1 ring-sky-500"
-                    : "bg-slate-900/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900"
-                }`}
+                aria-label={c.name}
+                aria-pressed={active}
+                title={c.name}
+                onClick={() => onChange({ accentColor: c.hex })}
+                className="relative flex h-8 w-8 items-center justify-center rounded-full transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
+                style={{ backgroundColor: c.hex }}
               >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-xs text-white">
-                      {tmpl.name}
-                    </span>
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-800 text-sky-400 border border-sky-500/20">
-                      {tmpl.tag}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    {tmpl.desc}
-                  </p>
-                </div>
-                {isSelected && (
-                  <div className="w-5 h-5 rounded-full bg-sky-500 flex items-center justify-center text-slate-950 flex-shrink-0">
-                    <Check className="w-3 h-3 stroke-[3]" />
-                  </div>
+                {active && (
+                  <motion.span
+                    layoutId="accent-ring"
+                    transition={spring.snappy}
+                    className="absolute -inset-1 rounded-full ring-2 ring-fg/70"
+                  />
                 )}
+                {active && <Check className="h-4 w-4 text-white" strokeWidth={3} />}
+              </button>
+            );
+          })}
+          <label
+            className={cn(
+              "flex h-8 items-center gap-2 rounded-full border pl-1 pr-3 text-[13px] text-fg-secondary transition-colors",
+              !isPreset ? "border-primary" : "border-line hover:border-line-strong"
+            )}
+          >
+            <span className="relative h-6 w-6 overflow-hidden rounded-full" style={{ backgroundColor: hex }}>
+              <input
+                type="color"
+                aria-label="Custom colour"
+                value={/^#[0-9a-fA-F]{6}$/.test(hex) ? hex : "#0284c7"}
+                onChange={(e) => onChange({ accentColor: e.target.value })}
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+              />
+            </span>
+            <input
+              aria-label="Hex colour"
+              value={hex}
+              onChange={(e) => {
+                setHex(e.target.value);
+                if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) onChange({ accentColor: e.target.value });
+              }}
+              className="w-[4.5rem] bg-transparent font-mono text-xs uppercase text-fg focus:outline-none"
+            />
+          </label>
+        </div>
+      </Group>
+
+      <Group title="Font">
+        <div role="radiogroup" aria-label="Font" className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {FONTS.map((f) => {
+            const active = theme.fontFamily === f.id;
+            return (
+              <button
+                key={f.id}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() => onChange({ fontFamily: f.id })}
+                className={cn(
+                  "flex items-center justify-between rounded-xl border px-3.5 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
+                  active ? "border-primary bg-primary/5" : "border-line hover:border-line-strong hover:bg-surface-2"
+                )}
+              >
+                <span>
+                  <span className={cn("block text-[15px] text-fg", f.className)}>{f.label}</span>
+                  <span className="block text-xs text-fg-muted">{f.sample}</span>
+                </span>
+                {active && <Check className="h-4 w-4 text-primary" />}
               </button>
             );
           })}
         </div>
-      </div>
+      </Group>
 
-      {/* 2. Accent Color Palette */}
-      <div>
-        <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 mb-2.5">
-          <Sliders className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Accent Color & Branding</span>
-        </label>
-        <div className="flex flex-wrap items-center gap-2">
-          {colorPresets.map((c) => (
-            <button
-              key={c.hex}
-              type="button"
-              onClick={() => onChange({ accentColor: c.hex })}
-              title={c.name}
-              className={`w-7 h-7 rounded-full transition-transform relative flex items-center justify-center ${
-                theme.accentColor === c.hex
-                  ? "scale-110 ring-2 ring-white ring-offset-2 ring-offset-slate-900"
-                  : "hover:scale-105 opacity-90 hover:opacity-100"
-              }`}
-              style={{ backgroundColor: c.hex }}
-            >
-              {theme.accentColor === c.hex && (
-                <Check className="w-3.5 h-3.5 text-white stroke-[3]" />
-              )}
-            </button>
-          ))}
-
-          {/* Custom Hex Picker Input */}
-          <div className="flex items-center gap-1.5 ml-2 bg-slate-900 border border-slate-800 rounded-lg px-2 py-1">
-            <span className="text-[10px] text-slate-400 font-mono">Custom:</span>
-            <input
-              type="color"
-              value={theme.accentColor}
-              onChange={(e) => onChange({ accentColor: e.target.value })}
-              className="w-5 h-5 rounded border-0 cursor-pointer bg-transparent"
-              title="Pick custom color"
+      <Group title="Layout">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <LayoutOption label="Paper size">
+            <SegmentedControl<PageSize>
+              ariaLabel="Paper size"
+              fullWidth
+              value={theme.pageSize ?? "a4"}
+              onChange={(pageSize) => onChange({ pageSize })}
+              options={[
+                { value: "a4", label: "A4" },
+                { value: "letter", label: "US Letter" },
+              ]}
             />
-          </div>
+          </LayoutOption>
+          <LayoutOption label="Text size">
+            <SegmentedControl<FontSizeScale>
+              ariaLabel="Text size"
+              fullWidth
+              value={theme.fontSize}
+              onChange={(fontSize) => onChange({ fontSize })}
+              options={[
+                { value: "sm", label: "Small" },
+                { value: "base", label: "Medium" },
+                { value: "lg", label: "Large" },
+              ]}
+            />
+          </LayoutOption>
+          <LayoutOption label="Page margins">
+            <SegmentedControl<SpacingScale>
+              ariaLabel="Page margins"
+              fullWidth
+              value={theme.documentMargins}
+              onChange={(documentMargins) => onChange({ documentMargins })}
+              options={[
+                { value: "compact", label: "Narrow" },
+                { value: "standard", label: "Normal" },
+                { value: "spacious", label: "Wide" },
+              ]}
+            />
+          </LayoutOption>
+          <LayoutOption label="Section spacing">
+            <SegmentedControl<SpacingScale>
+              ariaLabel="Section spacing"
+              fullWidth
+              value={theme.spacing}
+              onChange={(spacing) => onChange({ spacing })}
+              options={[
+                { value: "compact", label: "Compact" },
+                { value: "standard", label: "Normal" },
+                { value: "spacious", label: "Airy" },
+              ]}
+            />
+          </LayoutOption>
         </div>
-      </div>
+      </Group>
+    </div>
+  );
+}
 
-      {/* 3. Typography Selection */}
-      <div>
-        <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 mb-2">
-          <Type className="w-3.5 h-3.5 text-indigo-400" />
-          <span>Typography / Font Family</span>
-        </label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {fonts.map((f) => (
-            <button
-              key={f.id}
-              type="button"
-              onClick={() => onChange({ fontFamily: f.id })}
-              className={`px-3 py-2 rounded-xl border text-left text-xs transition-all ${
-                theme.fontFamily === f.id
-                  ? "bg-slate-800 border-indigo-500 text-white shadow-sm ring-1 ring-indigo-500"
-                  : "bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700"
-              }`}
-            >
-              <div className={f.previewClass}>{f.label}</div>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 4. Spacing & Density */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">
-            Section Spacing
-          </label>
-          <div className="grid grid-cols-3 gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
-            {(["compact", "standard", "spacious"] as SpacingScale[]).map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => onChange({ spacing: s })}
-                className={`py-1.5 text-[11px] font-semibold rounded-lg capitalize transition-all ${
-                  theme.spacing === s
-                    ? "bg-slate-800 text-white shadow-sm"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <label className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">
-            Profile Photo
-          </label>
-          <button
-            type="button"
-            onClick={() => onChange({ showAvatar: !theme.showAvatar })}
-            className={`w-full py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all ${
-              theme.showAvatar
-                ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400"
-                : "bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700"
-            }`}
-          >
-            <span>Show Photo / Avatar</span>
-            <div
-              className={`w-4 h-4 rounded-md flex items-center justify-center border ${
-                theme.showAvatar
-                  ? "bg-emerald-500 border-emerald-400 text-slate-950"
-                  : "border-slate-700"
-              }`}
-            >
-              {theme.showAvatar && <Check className="w-3 h-3 stroke-[3]" />}
-            </div>
-          </button>
-        </div>
-      </div>
+function LayoutOption({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <p className="text-[13px] font-medium text-fg-secondary">{label}</p>
+      {children}
     </div>
   );
 }
