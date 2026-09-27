@@ -36,3 +36,22 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# test output (screenshots, generated PDFs)
+/test-artifacts/
+test-candidate-resume.pdf
+
+# AI assistant / agent files
+AGENTS.md
+CLAUDE.md
+CLAUDE.local.md
+GEMINI.md
+.claude/
+.gemini/
+.cursor/
+.cursorrules
+.aider*
+.codex/
+.windsurf/
+.windsurfrules
+.github/copilot-instructions.md
