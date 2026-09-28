@@ -73,6 +73,7 @@ export function CertificationsForm({ certifications, onChange }: CertificationsF
                   onToggleHidden={() => update(item.id, { visible: item.visible === false })}
                   onDelete={() => onChange(certifications.filter((c) => c.id !== item.id))}
                   focusRequested={accordion.focusId === item.id}
+                  focusField={accordion.focusField}
                   onFocused={accordion.clearFocus}
                 >
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

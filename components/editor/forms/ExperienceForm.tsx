@@ -107,6 +107,7 @@ export function ExperienceForm({ experience, onChange }: ExperienceFormProps) {
                   onToggleHidden={() => update(item.id, { visible: item.visible === false })}
                   onDelete={() => onChange(experience.filter((e) => e.id !== item.id))}
                   focusRequested={accordion.focusId === item.id}
+                  focusField={accordion.focusField}
                   onFocused={accordion.clearFocus}
                 >
                   {linked && (

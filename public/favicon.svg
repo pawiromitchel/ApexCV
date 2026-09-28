@@ -1,16 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stopColor="#0ea5e9" />
-      <stop offset="60%" stopColor="#0284c7" />
-      <stop offset="100%" stopColor="#10b981" />
+      <stop offset="0%" stop-color="#0ea5e9" />
+      <stop offset="60%" stop-color="#0284c7" />
+      <stop offset="100%" stop-color="#10b981" />
     </linearGradient>
     <linearGradient id="glyph" x1="16" y1="12" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stopColor="#ffffff" />
-      <stop offset="100%" stopColor="#d1fae5" />
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#d1fae5" />
     </linearGradient>
     <filter id="shadow" x="0" y="0" width="64" height="64" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="3" stdDeviation="3" floodColor="#0c4a6e" floodOpacity="0.45" />
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#0c4a6e" flood-opacity="0.45" />
     </filter>
   </defs>
 

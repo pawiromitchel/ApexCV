@@ -93,7 +93,8 @@ export function LanguagesForm({ languages = [], onChange }: LanguagesFormProps) 
                 onToggleHidden={() => update(item.id, { visible: item.visible === false })}
                 onDelete={() => onChange(languages.filter((l) => l.id !== item.id))}
                 focusRequested={accordion.focusId === item.id}
-                onFocused={accordion.clearFocus}
+                focusField={accordion.focusField}
+                  onFocused={accordion.clearFocus}
               >
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <Field label="Language" required>

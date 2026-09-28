@@ -1,5 +1,5 @@
 // ApexCV Service Worker
-const CACHE_NAME = 'apexcv-v2';
+const CACHE_NAME = 'apexcv-v3';
 
 // Essential static assets and app shells to pre-cache immediately
 const PRECACHE_ASSETS = [

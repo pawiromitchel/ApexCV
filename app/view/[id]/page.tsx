@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getPublicResume } from "@/lib/db";
 import { PublicViewClient } from "@/components/preview/PublicViewClient";
+import { OG_IMAGE } from "@/lib/site";
 
 interface PageProps {
   params: { id: string };
@@ -21,8 +22,9 @@ export function generateMetadata({ params }: PageProps): Metadata {
     description,
     // Shared CVs are for the people they're sent to, not search engines
     robots: { index: false, follow: false },
-    openGraph: { title, description, type: "profile" },
-    twitter: { card: "summary", title, description },
+    // Page-level openGraph replaces the root one entirely, so repeat the image
+    openGraph: { title, description, type: "profile", siteName: "ApexCV", images: [OG_IMAGE] },
+    twitter: { card: "summary_large_image", title, description, images: [OG_IMAGE.url] },
   };
 }
 

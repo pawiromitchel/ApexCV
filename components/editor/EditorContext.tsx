@@ -24,24 +24,44 @@ export function useItemAccordion<T extends { id: string }>(items: T[]) {
   const [openIds, setOpenIds] = useState<Record<string, boolean>>(() =>
     items.length > 0 ? { [items[0].id]: true } : {}
   );
+  // The card that should scroll into view, and whether its first field should also get focus
   const [focusId, setFocusId] = useState<string | null>(null);
+  const [focusField, setFocusField] = useState(false);
   const reveal = useRevealRequest();
   const lastNonce = useRef<number | null>(null);
 
+  const openOnly = useCallback((id: string, withField: boolean) => {
+    setOpenIds({ [id]: true });
+    setFocusId(id);
+    setFocusField(withField);
+  }, []);
+
+  // Clicking an entry in the preview opens it on its own and focuses it
   useEffect(() => {
     if (!reveal || reveal.nonce === lastNonce.current) return;
     if (!items.some((i) => i.id === reveal.itemId)) return;
     lastNonce.current = reveal.nonce;
-    setOpenIds((prev) => ({ ...prev, [reveal.itemId]: true }));
-    setFocusId(reveal.itemId);
-  }, [reveal, items]);
+    openOnly(reveal.itemId, true);
+  }, [reveal, items, openOnly]);
 
-  const toggle = useCallback((id: string) => setOpenIds((prev) => ({ ...prev, [id]: !prev[id] })), []);
+  /** Opening a card collapses the others and scrolls it to the top; closing just closes it. */
+  const toggle = useCallback(
+    (id: string) => {
+      setOpenIds((prev) => {
+        if (prev[id]) {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        }
+        setFocusId(id);
+        setFocusField(false);
+        return { [id]: true };
+      });
+    },
+    []
+  );
   /** Collapse everything else, open this one, then scroll to it and focus its first field. */
-  const openAndFocus = useCallback((id: string) => {
-    setOpenIds({ [id]: true });
-    setFocusId(id);
-  }, []);
+  const openAndFocus = useCallback((id: string) => openOnly(id, true), [openOnly]);
   const clearFocus = useCallback(() => setFocusId(null), []);
 
   return {
@@ -49,6 +69,7 @@ export function useItemAccordion<T extends { id: string }>(items: T[]) {
     toggle,
     openAndFocus,
     focusId,
+    focusField,
     clearFocus,
   };
 }

@@ -24,7 +24,10 @@ interface ItemCardProps {
   onDelete?: () => void;
   /** Noun used in accessible labels, e.g. "position". */
   noun: string;
+  /** Scroll this card into view (after siblings collapse). */
   focusRequested?: boolean;
+  /** Also move keyboard focus to the first field. */
+  focusField?: boolean;
   onFocused?: () => void;
   className?: string;
   children: React.ReactNode;
@@ -46,6 +49,7 @@ export function ItemCard({
   onDelete,
   noun,
   focusRequested,
+  focusField = true,
   onFocused,
   className,
   children,
@@ -55,21 +59,29 @@ export function ItemCard({
 
   useEffect(() => {
     if (!focusRequested) return;
+    // Wait for the previously open card to collapse, otherwise the target moves mid-scroll
     const scrollTimer = window.setTimeout(() => {
-      ref.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }, 40);
+      ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 260);
     const focusTimer = window.setTimeout(() => {
-      ref.current?.querySelector<HTMLElement>("[data-item-body] input, [data-item-body] textarea")?.focus({ preventScroll: true });
+      if (focusField) {
+        ref.current?.querySelector<HTMLElement>("[data-item-body] input, [data-item-body] textarea")?.focus({ preventScroll: true });
+      }
       setFlash(true);
       onFocused?.();
-    }, 300);
-    const flashTimer = window.setTimeout(() => setFlash(false), 1400);
+    }, 560);
     return () => {
       window.clearTimeout(scrollTimer);
       window.clearTimeout(focusTimer);
-      window.clearTimeout(flashTimer);
     };
-  }, [focusRequested, onFocused]);
+  }, [focusRequested, focusField, onFocused]);
+
+  // Own effect so clearing the focus request (onFocused) can't cancel the fade-out
+  useEffect(() => {
+    if (!flash) return;
+    const t = window.setTimeout(() => setFlash(false), 1000);
+    return () => window.clearTimeout(t);
+  }, [flash]);
 
   const bodyId = `${id}-body`;
 
@@ -83,7 +95,7 @@ export function ItemCard({
       exit={{ opacity: 0, height: 0, marginTop: 0, transition: { duration: 0.2, ease: ease.inOut } }}
       transition={spring.smooth}
       className={cn(
-        "group rounded-2xl border bg-surface shadow-soft transition-[border-color,box-shadow] duration-300",
+        "group scroll-mt-4 rounded-2xl border bg-surface shadow-soft transition-[border-color,box-shadow] duration-300",
         open ? "border-line-strong" : "border-line hover:border-line-strong",
         flash && "border-primary ring-4 ring-primary/15",
         className

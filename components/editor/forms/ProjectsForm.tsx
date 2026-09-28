@@ -73,7 +73,8 @@ export function ProjectsForm({ projects, onChange }: ProjectsFormProps) {
                 onToggleHidden={() => update(item.id, { visible: item.visible === false })}
                 onDelete={() => onChange(projects.filter((p) => p.id !== item.id))}
                 focusRequested={accordion.focusId === item.id}
-                onFocused={accordion.clearFocus}
+                focusField={accordion.focusField}
+                  onFocused={accordion.clearFocus}
               >
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <Field label="Project name" required>

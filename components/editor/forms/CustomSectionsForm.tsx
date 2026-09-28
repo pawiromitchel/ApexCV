@@ -123,7 +123,8 @@ export function CustomSectionsForm({ customSections, onChange }: CustomSectionsF
                       onToggleHidden={() => updateItems(section.id, (items) => items.map((i) => (i.id === item.id ? { ...i, visible: i.visible === false } : i)))}
                       onDelete={() => updateItems(section.id, (items) => items.filter((i) => i.id !== item.id))}
                       focusRequested={accordion.focusId === item.id}
-                      onFocused={accordion.clearFocus}
+                      focusField={accordion.focusField}
+                  onFocused={accordion.clearFocus}
                     >
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <Field label="Title">

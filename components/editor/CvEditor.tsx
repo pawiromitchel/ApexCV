@@ -117,6 +117,37 @@ export function CvEditor({ initialData }: { initialData: ResumeData }) {
     if (window.innerWidth < 768) setViewMode("edit");
   }, []);
 
+  // Restore the section (or Design tab) from the URL hash, e.g. /app/<id>#experience.
+  // Syncing only starts once the restored section has rendered, so the default
+  // section can never overwrite the hash first.
+  const hashRead = useRef(false);
+  const [hashReady, setHashReady] = useState(false);
+  useEffect(() => {
+    if (!hashRead.current) {
+      hashRead.current = true;
+      const hash = decodeURIComponent(window.location.hash.slice(1)).toLowerCase();
+      if (hash === "design") {
+        setTab("design");
+        setDesignMounted(true);
+      } else if (hash) {
+        const match =
+          navigableSections(dataRef.current).find((k) => k.toLowerCase() === hash) ??
+          dataRef.current.customSections?.find((c) => c.id.toLowerCase() === hash)?.id;
+        if (match) setActiveSection(match);
+      }
+    }
+    setHashReady(true);
+  }, []);
+
+  // Keep the hash in sync without adding history entries
+  useEffect(() => {
+    if (!hashReady) return;
+    const hash = tab === "design" ? "design" : activeSection.toLowerCase();
+    if (window.location.hash.slice(1) !== hash) {
+      window.history.replaceState(window.history.state, "", `#${hash}`);
+    }
+  }, [hashReady, tab, activeSection]);
+
   // Live sync to an open public page in another tab
   useEffect(() => {
     if (!("BroadcastChannel" in window)) return;

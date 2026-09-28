@@ -4,6 +4,7 @@ import "./globals.css";
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 import { Providers } from "@/components/Providers";
 import { themeInitScript } from "@/lib/themeScript";
+import { OG_IMAGE, SITE_URL } from "@/lib/site";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -46,9 +47,30 @@ export const viewport: Viewport = {
   maximumScale: 5,
 };
 
+const TITLE = "ApexCV · Free CV & resume builder";
+const DESCRIPTION =
+  "A free CV builder with a live preview, clean ATS-friendly templates, PDF import, and print-quality PDF export. No account needed.";
+
 export const metadata: Metadata = {
-  title: "ApexCV · Free CV & resume builder",
-  description: "A free CV builder with a live preview, clean ATS-friendly templates, PDF import, and print-quality PDF export. No account needed.",
+  // Resolves relative image URLs in social tags to absolute ones, which link previews require
+  metadataBase: new URL(SITE_URL),
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: "ApexCV",
+    title: TITLE,
+    description: DESCRIPTION,
+    locale: "en_US",
+    images: [OG_IMAGE],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [OG_IMAGE.url],
+  },
   applicationName: "ApexCV",
   appleWebApp: {
     capable: true,
