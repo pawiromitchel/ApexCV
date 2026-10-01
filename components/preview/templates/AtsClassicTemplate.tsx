@@ -78,7 +78,7 @@ export function AtsClassicTemplate({ data, focusedTarget }: TemplateProps) {
             return (
               <section key="summary" data-edit-section="summary">
                 <h2 className={`font-bold text-xs uppercase tracking-wider border-b border-slate-900 pb-0.5 ${spacing.sectionHeaderMargin} text-slate-950`}>
-                  Professional Summary
+                  Summary
                 </h2>
                 <p className="text-slate-800 text-justify text-[11.5px] leading-normal">
                   {summary}
@@ -92,7 +92,7 @@ export function AtsClassicTemplate({ data, focusedTarget }: TemplateProps) {
             return (
               <section key="experience" data-edit-section="experience" className={`transition-all duration-300 rounded ${isSectionFocused && !focusedTarget?.itemId ? "cv-focus" : ""}`}>
                 <h2 className={`font-bold text-xs uppercase tracking-wider border-b border-slate-900 pb-0.5 ${spacing.sectionHeaderMargin} text-slate-950`}>
-                  Professional Experience
+                  Experience
                 </h2>
                 <div className={spacing.itemGap}>
                   <ExperienceEntries experience={experience} focusedTarget={focusedTarget} style={{ accent: "#0f172a", density: themeConfig?.spacing, companyFirst: true, role: "text-[11.5px] italic text-slate-800", groupRole: "text-[11.5px] font-semibold text-slate-900", company: "", groupCompany: "text-[12.5px] font-bold text-slate-950", date: "text-[11px] text-slate-800", location: "text-[11.5px] italic text-slate-800", bullets: "space-y-0.5 text-[11px] text-slate-800" }} />
@@ -113,13 +113,13 @@ export function AtsClassicTemplate({ data, focusedTarget }: TemplateProps) {
                     const isItemFocused = focusedTarget?.itemId === edu.id;
                     return (
                       <div key={edu.id} data-edit-item={edu.id} className={`transition-all duration-300 rounded ${isItemFocused ? "cv-focus" : ""}`}>
-                        <div className="flex justify-between items-baseline gap-2 font-bold text-slate-950">
+                        <div className="flex justify-between items-baseline gap-2 text-[12.5px] font-bold text-slate-950">
                           <span className="min-w-0 flex-1 truncate">{edu.institution}</span>
                           <span className="font-normal text-[11px] text-slate-800 whitespace-nowrap flex-shrink-0 ml-auto">
                             {formatMonthYear(edu.startDate)} – {formatMonthYear(edu.endDate)}
                           </span>
                         </div>
-                        <div className="flex justify-between items-baseline italic text-slate-800 text-[11.5px]">
+                        <div className="flex justify-between items-baseline italic text-slate-800 text-[11.5px] leading-snug">
                           <span className="min-w-0 flex-1 truncate">{edu.degree}</span>
                           {edu.location && <span className="whitespace-nowrap flex-shrink-0 ml-auto">{edu.location}</span>}
                         </div>
@@ -141,7 +141,7 @@ export function AtsClassicTemplate({ data, focusedTarget }: TemplateProps) {
             return (
               <section key="skills" data-edit-section="skills" className={`transition-all duration-300 rounded ${isSectionFocused ? "cv-focus" : ""}`}>
                 <h2 className="font-bold text-xs uppercase tracking-wider border-b border-slate-900 pb-0.5 mb-1.5 text-slate-950">
-                  Skills & Competencies
+                  Skills
                 </h2>
                 <div className="space-y-1 text-[11.5px]">
                   {Object.entries(skillsByCategory).map(([cat, list]) => (
@@ -162,7 +162,7 @@ export function AtsClassicTemplate({ data, focusedTarget }: TemplateProps) {
             return (
               <section key="projects" data-edit-section="projects" className={`transition-all duration-300 rounded ${isSectionFocused && !focusedTarget?.itemId ? "cv-focus" : ""}`}>
                 <h2 className={`font-bold text-xs uppercase tracking-wider border-b border-slate-900 pb-0.5 ${spacing.sectionHeaderMargin} text-slate-950`}>
-                  Key Projects
+                  Projects
                 </h2>
                 <div className="space-y-2">
                   {projects.map((proj) => {
@@ -220,7 +220,7 @@ export function AtsClassicTemplate({ data, focusedTarget }: TemplateProps) {
             return (
               <section key="certifications" data-edit-section="certifications" className={`transition-all duration-300 rounded ${isSectionFocused && !focusedTarget?.itemId ? "cv-focus" : ""}`}>
                 <h2 className={`font-bold text-xs uppercase tracking-wider border-b border-slate-900 pb-0.5 ${spacing.sectionHeaderMargin} text-slate-950`}>
-                  Certifications & Honors
+                  Certifications
                 </h2>
                 <div className="space-y-1.5">
                   {certifications.map((c) => {

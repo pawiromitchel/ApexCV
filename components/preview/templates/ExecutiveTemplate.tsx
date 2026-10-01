@@ -1,3 +1,4 @@
+import { CertificationRows } from "./CertificationRows";
 import { ExperienceEntries, contactLines } from "./ExperienceEntries";
 import React from "react";
 import { ResumeData, CustomSection, FocusedTarget } from "@/lib/types";
@@ -28,8 +29,8 @@ export function ExecutiveTemplate({ data, focusedTarget }: TemplateProps) {
   return (
     <div className={`${spacing.containerPadding} ${getFontSizeClass()} text-slate-900 leading-normal bg-white min-h-[var(--sheet-h,297mm)] font-serif`}>
       {/* Header */}
-      <header data-edit-section="personal" className={`text-center ${spacing.headerMargin} border-b-2 border-slate-900`}>
-        <h1 className="text-3xl font-bold tracking-tight uppercase text-slate-900">
+      <header data-edit-section="personal" className={`text-center ${spacing.headerMargin} border-b border-slate-900`}>
+        <h1 className="text-2xl font-bold leading-tight tracking-tight uppercase text-slate-900">
           {personalInfo.fullName || "Your Full Name"}
         </h1>
         <div
@@ -40,7 +41,7 @@ export function ExecutiveTemplate({ data, focusedTarget }: TemplateProps) {
         </div>
 
         {/* Contact Strip */}
-        <div className="mt-2.5 space-y-1 text-xs text-slate-700 font-sans">
+        <div className="mt-2 space-y-0.5 text-xs text-slate-700 font-sans">
           {contactLines(personalInfo).map((line) => (
             <div key={line.join()} className="flex flex-wrap items-center justify-center gap-x-3">
               {line.map((part, i) => (
@@ -69,10 +70,10 @@ export function ExecutiveTemplate({ data, focusedTarget }: TemplateProps) {
                 }`}
               >
                 <h2
-                  className="text-xs font-bold uppercase tracking-wider pb-1 mb-2 border-b border-slate-300 font-sans"
+                  className="text-xs font-bold uppercase tracking-wider pb-0.5 mb-2 border-b border-slate-300 font-sans"
                   style={{ color: accent }}
                 >
-                  Executive Profile
+                  Summary
                 </h2>
                 <p className="text-xs text-slate-800 leading-relaxed text-justify">
                   {summary}
@@ -91,10 +92,10 @@ export function ExecutiveTemplate({ data, focusedTarget }: TemplateProps) {
                 }`}
               >
                 <h2
-                  className="text-xs font-bold uppercase tracking-wider pb-1 mb-3 border-b border-slate-300 font-sans"
+                  className="text-xs font-bold uppercase tracking-wider pb-0.5 mb-2 border-b border-slate-300 font-sans"
                   style={{ color: accent }}
                 >
-                  Professional Experience
+                  Experience
                 </h2>
                 <div className="space-y-4">
                   <ExperienceEntries experience={experience} focusedTarget={focusedTarget} style={{ accent, density: themeConfig?.spacing, role: "text-sm font-bold text-slate-900", groupRole: "text-xs font-bold text-slate-900", company: "font-sans text-xs font-semibold", groupCompany: "font-sans text-sm font-semibold", date: "font-sans text-xs text-slate-600", location: "font-sans text-[11px] text-slate-500", bullets: "font-sans space-y-1 text-xs text-slate-800" }} />
@@ -113,10 +114,10 @@ export function ExecutiveTemplate({ data, focusedTarget }: TemplateProps) {
                 }`}
               >
                 <h2
-                  className="text-xs font-bold uppercase tracking-wider pb-1 mb-2.5 border-b border-slate-300 font-sans"
+                  className="text-xs font-bold uppercase tracking-wider pb-0.5 mb-2 border-b border-slate-300 font-sans"
                   style={{ color: accent }}
                 >
-                  Education & Credentials
+                  Education
                 </h2>
                 <div className="space-y-2.5">
                   {education.map((edu) => {
@@ -166,16 +167,16 @@ export function ExecutiveTemplate({ data, focusedTarget }: TemplateProps) {
                 }`}
               >
                 <h2
-                  className="text-xs font-bold uppercase tracking-wider pb-1 mb-2.5 border-b border-slate-300 font-sans"
+                  className="text-xs font-bold uppercase tracking-wider pb-0.5 mb-2 border-b border-slate-300 font-sans"
                   style={{ color: accent }}
                 >
-                  Core Competencies & Expertise
+                  Skills
                 </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 text-xs font-sans text-slate-800">
+                <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs font-sans text-slate-800">
                   {skills.map((s) => (
                     <div key={s.id} className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: accent }} />
-                      <span className="truncate">{s.name}</span>
+                      <span className="w-1 h-1 rounded-full flex-shrink-0" style={{ backgroundColor: accent }} />
+                      <span>{s.name}</span>
                     </div>
                   ))}
                 </div>
@@ -193,10 +194,10 @@ export function ExecutiveTemplate({ data, focusedTarget }: TemplateProps) {
                 }`}
               >
                 <h2
-                  className="text-xs font-bold uppercase tracking-wider pb-1 mb-2.5 border-b border-slate-300 font-sans"
+                  className="text-xs font-bold uppercase tracking-wider pb-0.5 mb-2 border-b border-slate-300 font-sans"
                   style={{ color: accent }}
                 >
-                  Key Initiatives & Ventures
+                  Projects
                 </h2>
                 <div className="space-y-2 text-xs">
                   {projects.map((proj) => {
@@ -274,56 +275,12 @@ export function ExecutiveTemplate({ data, focusedTarget }: TemplateProps) {
                 }`}
               >
                 <h2
-                  className="text-xs font-bold uppercase tracking-wider pb-1 mb-2 border-b border-slate-300 font-sans"
+                  className="text-xs font-bold uppercase tracking-wider pb-0.5 mb-2 border-b border-slate-300 font-sans"
                   style={{ color: accent }}
                 >
-                  Certifications & Governance
+                  Certifications
                 </h2>
-                <div className="grid grid-cols-2 gap-2 text-xs font-sans">
-                  {certifications.map((c) => {
-                    const isItemFocused = focusedTarget?.itemId === c.id;
-                    return (
-                      <div
-                        key={c.id}
-                        data-edit-item={c.id}
-                        className={`p-2 rounded border border-slate-200/80 bg-slate-50/40 flex items-start gap-2 transition-all duration-300 ${
-                          isItemFocused ? "cv-focus" : ""
-                        }`}
-                      >
-                        <div
-                          className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 text-white mt-0.5"
-                          style={{ backgroundColor: accent }}
-                        >
-                          <Award className="w-3.5 h-3.5" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="font-semibold text-slate-900 leading-snug line-clamp-1">{c.name || c.issuer}</div>
-                          {c.name && c.issuer && (
-                            <div className="text-[11px] text-slate-600 line-clamp-1">
-                              {c.issuer}
-                            </div>
-                          )}
-                          <div className="flex items-center justify-between gap-1 mt-0.5">
-                            <span className="text-[10px] text-slate-500 whitespace-nowrap">
-                              {formatMonthYear(c.date)}
-                            </span>
-                            {c.url && (
-                              <a
-                                href={normalizeUrl(c.url)}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-0.5 text-[10px] font-medium text-blue-700 hover:underline ml-auto flex-shrink-0"
-                              >
-                                <ExternalLink className="w-2.5 h-2.5" />
-                                <span>Verify</span>
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                <CertificationRows certifications={certifications} focusedTarget={focusedTarget} accent={accent} className="font-sans" />
               </section>
             );
           }
@@ -338,7 +295,7 @@ export function ExecutiveTemplate({ data, focusedTarget }: TemplateProps) {
                 }`}
               >
                 <h2
-                  className="text-xs font-bold uppercase tracking-wider pb-1 mb-2 border-b border-slate-300 font-sans"
+                  className="text-xs font-bold uppercase tracking-wider pb-0.5 mb-2 border-b border-slate-300 font-sans"
                   style={{ color: accent }}
                 >
                   Languages

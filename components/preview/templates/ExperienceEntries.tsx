@@ -27,7 +27,7 @@ export interface ExperienceStyle {
 }
 
 const GAPS: Record<SpacingScale, { entries: string; roles: string }> = {
-  compact: { entries: "space-y-3", roles: "space-y-2" },
+  compact: { entries: "space-y-2.5", roles: "space-y-1.5" },
   standard: { entries: "space-y-4", roles: "space-y-2.5" },
   spacious: { entries: "space-y-5", roles: "space-y-3" },
 };
@@ -46,12 +46,17 @@ function Bullets({ exp, focused, focusedTarget, className }: { exp: ExperienceIt
     // Markers hang inside the content edge so text and bullets line up across all entries
     <ul className={`mt-1 list-disc pl-[1.1em] marker:text-slate-400 ${className}`}>
       {bullets.map((b, i) => (
-        <li key={i} className={`leading-relaxed ${focused && focusedTarget?.bulletIndex === i ? "cv-focus-bullet" : ""}`}>
+        <li key={i} className={`leading-normal ${focused && focusedTarget?.bulletIndex === i ? "cv-focus-bullet" : ""}`}>
           <RichText content={b} />
         </li>
       ))}
     </ul>
   );
+}
+
+/** Masks the timeline below the final dot so the line ends at the last role. */
+function TimelineEnd() {
+  return <span aria-hidden className="absolute -left-[16px] -bottom-1 top-[1.1em] w-[5px] bg-white" />;
 }
 
 function Dot({ accent, hollow }: { accent: string; hollow?: boolean }) {
@@ -112,6 +117,7 @@ export function ExperienceEntries({
                 </>
               )}
               <Bullets exp={exp} focused={focused} focusedTarget={focusedTarget} className={s.bullets} />
+              {s.timeline && gIdx === groups.length - 1 && <TimelineEnd />}
             </div>
           );
         }
@@ -131,7 +137,7 @@ export function ExperienceEntries({
               right={group.overallDate && <span className={s.date}>{group.overallDate}</span>}
             />
             <div className={`mt-1.5 ${gaps.roles}`}>
-              {group.items.map((exp) => {
+              {group.items.map((exp, rIdx) => {
                 const focused = focusedTarget?.itemId === exp.id;
                 const when = period(exp);
                 return (
@@ -139,6 +145,7 @@ export function ExperienceEntries({
                     {s.timeline && <Dot accent={s.accent} />}
                     <Row left={<span className={s.groupRole}>{exp.role}</span>} right={when && <span className={s.date}>{when}</span>} />
                     <Bullets exp={exp} focused={focused} focusedTarget={focusedTarget} className={s.bullets} />
+                    {s.timeline && gIdx === groups.length - 1 && rIdx === group.items.length - 1 && <TimelineEnd />}
                   </div>
                 );
               })}

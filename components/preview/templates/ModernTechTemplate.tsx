@@ -1,3 +1,4 @@
+import { CertificationRows } from "./CertificationRows";
 import { ExperienceEntries } from "./ExperienceEntries";
 import React from "react";
 import { ResumeData, CustomSection, FocusedTarget } from "@/lib/types";
@@ -50,7 +51,7 @@ export function ModernTechTemplate({ data, focusedTarget }: TemplateProps) {
       <header data-edit-section="personal" className={`border-b ${spacing.headerMargin} border-slate-200`}>
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
+            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
               {personalInfo.fullName || "Your Full Name"}
             </h1>
             <div
@@ -61,7 +62,7 @@ export function ModernTechTemplate({ data, focusedTarget }: TemplateProps) {
             </div>
 
             {/* Contact Row */}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-3 text-xs text-slate-600">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-slate-600">
               {personalInfo.email && (
                 <div className="flex items-center gap-1.5">
                   <Mail className="w-3.5 h-3.5" style={{ color: accent }} />
@@ -132,7 +133,7 @@ export function ModernTechTemplate({ data, focusedTarget }: TemplateProps) {
                     className="w-2 h-2 rounded-sm"
                     style={{ backgroundColor: accent }}
                   />
-                  Professional Summary
+                  Summary
                 </h2>
                 <p className="text-xs text-slate-700 leading-relaxed">
                   {summary}
@@ -155,7 +156,7 @@ export function ModernTechTemplate({ data, focusedTarget }: TemplateProps) {
                     className="w-2 h-2 rounded-sm"
                     style={{ backgroundColor: accent }}
                   />
-                  Work Experience
+                  Experience
                 </h2>
                 <div className={spacing.itemGap}>
                   <ExperienceEntries experience={experience} focusedTarget={focusedTarget} style={{ accent, density: themeConfig?.spacing, role: "text-sm font-bold text-slate-900", groupRole: "text-xs font-bold text-slate-900", company: "text-xs font-medium", groupCompany: "text-sm font-bold", date: "text-[11px] font-medium text-slate-500", location: "text-[11px] text-slate-500", bullets: "space-y-1 text-xs text-slate-700" }} />
@@ -178,12 +179,12 @@ export function ModernTechTemplate({ data, focusedTarget }: TemplateProps) {
                     className="w-2 h-2 rounded-sm"
                     style={{ backgroundColor: accent }}
                   />
-                  Skills & Technologies
+                  Skills
                 </h2>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {Object.entries(skillsByCategory).map(([cat, skList]) => (
                     <div key={cat} className="flex items-start text-xs gap-2">
-                      <span className="font-semibold text-slate-800 w-40 flex-shrink-0 pt-1 text-[11px] uppercase tracking-wide">
+                      <span className="font-semibold text-slate-800 w-40 flex-shrink-0 pt-1 text-[11px]">
                         {cat}:
                       </span>
                       <div className="flex flex-wrap gap-1.5 flex-1">
@@ -217,7 +218,7 @@ export function ModernTechTemplate({ data, focusedTarget }: TemplateProps) {
                     className="w-2 h-2 rounded-sm"
                     style={{ backgroundColor: accent }}
                   />
-                  Key Projects
+                  Projects
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {projects.map((proj) => {
@@ -353,55 +354,9 @@ export function ModernTechTemplate({ data, focusedTarget }: TemplateProps) {
                     className="w-2 h-2 rounded-sm"
                     style={{ backgroundColor: accent }}
                   />
-                  Certifications & Honors
+                  Certifications
                 </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-                  {certifications.map((cert) => {
-                    const isItemFocused = focusedTarget?.itemId === cert.id;
-                    return (
-                      <div
-                        key={cert.id}
-                        data-edit-item={cert.id}
-                        className={`p-2.5 rounded-lg border border-slate-200/80 bg-slate-50/40 flex items-start gap-2.5 transition-all duration-300 ${
-                          isItemFocused ? "cv-focus" : ""
-                        }`}
-                      >
-                        <div
-                          className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 text-white shadow-xs mt-0.5"
-                          style={{ backgroundColor: accent }}
-                        >
-                          <Award className="w-4 h-4" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="font-bold text-slate-900 leading-snug line-clamp-1">
-                            {cert.name || cert.issuer}
-                          </div>
-                          {cert.name && cert.issuer && (
-                            <div className="text-[11px] text-slate-600 font-medium line-clamp-1">
-                              {cert.issuer}
-                            </div>
-                          )}
-                          <div className="flex items-center justify-between gap-2 mt-1">
-                            <span className="text-[10px] font-semibold text-slate-500 whitespace-nowrap">
-                              {formatMonthYear(cert.date)}
-                            </span>
-                            {cert.url && (
-                              <a
-                                href={normalizeUrl(cert.url)}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-1 text-[10px] font-medium text-sky-600 hover:underline ml-auto flex-shrink-0"
-                              >
-                                <ExternalLink className="w-2.5 h-2.5" />
-                                <span>Verify</span>
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                <CertificationRows certifications={certifications} focusedTarget={focusedTarget} accent={accent} className="" />
               </section>
             );
           }
@@ -420,7 +375,7 @@ export function ModernTechTemplate({ data, focusedTarget }: TemplateProps) {
                     className="w-2 h-2 rounded-sm"
                     style={{ backgroundColor: accent }}
                   />
-                  Spoken Languages
+                  Languages
                 </h2>
                 <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs">
                   {languages.map((l) => (

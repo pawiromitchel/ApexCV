@@ -1,3 +1,4 @@
+import { CertificationRows } from "./CertificationRows";
 import { ExperienceEntries } from "./ExperienceEntries";
 import React from "react";
 import { ResumeData, CustomSection, FocusedTarget } from "@/lib/types";
@@ -160,7 +161,7 @@ export function CreativeTemplate({ data, focusedTarget }: TemplateProps) {
                   style={{ color: accent }}
                 >
                   <span className="w-3 h-0.5" style={{ backgroundColor: accent }} />
-                  Specialties & Skills
+                  Skills
                 </h2>
                 <div className="flex flex-wrap gap-2">
                   {skills.map((s) => (
@@ -195,7 +196,7 @@ export function CreativeTemplate({ data, focusedTarget }: TemplateProps) {
                   style={{ color: accent }}
                 >
                   <span className="w-3 h-0.5" style={{ backgroundColor: accent }} />
-                  Featured Portfolio
+                  Projects
                 </h2>
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   {projects.map((proj) => {
@@ -319,54 +320,9 @@ export function CreativeTemplate({ data, focusedTarget }: TemplateProps) {
                   style={{ color: accent }}
                 >
                   <span className="w-3 h-0.5" style={{ backgroundColor: accent }} />
-                  Certifications & Honors
+                  Certifications
                 </h2>
-                <div className="grid grid-cols-2 gap-2.5 text-xs">
-                  {certifications.map((c) => {
-                    const isItemFocused = focusedTarget?.itemId === c.id;
-                    return (
-                      <div
-                        key={c.id}
-                        data-edit-item={c.id}
-                        className={`p-3 rounded-xl border border-slate-200/80 bg-slate-50/60 flex items-start gap-2.5 transition-all duration-300 ${
-                          isItemFocused ? "cv-focus" : ""
-                        }`}
-                      >
-                        <div
-                          className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-white shadow-xs mt-0.5"
-                          style={{ backgroundColor: accent }}
-                        >
-                          <Award className="w-4 h-4" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="font-bold text-slate-900 leading-snug line-clamp-1">{c.name || c.issuer}</div>
-                          {c.name && c.issuer && (
-                            <div className="text-[11px] text-slate-600 font-medium line-clamp-1">
-                              {c.issuer}
-                            </div>
-                          )}
-                          <div className="flex items-center justify-between gap-2 mt-1">
-                            <span className="text-[10px] font-semibold text-slate-500 whitespace-nowrap">
-                              {formatMonthYear(c.date)}
-                            </span>
-                            {c.url && (
-                              <a
-                                href={normalizeUrl(c.url)}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-0.5 text-[10px] font-bold hover:underline ml-auto flex-shrink-0"
-                                style={{ color: accent }}
-                              >
-                                <ExternalLink className="w-2.5 h-2.5" />
-                                <span>Verify</span>
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                <CertificationRows certifications={certifications} focusedTarget={focusedTarget} accent={accent} className="" />
               </section>
             );
           }
@@ -385,15 +341,11 @@ export function CreativeTemplate({ data, focusedTarget }: TemplateProps) {
                   style={{ color: accent }}
                 >
                   <span className="w-3 h-0.5" style={{ backgroundColor: accent }} />
-                  Spoken Languages
+                  Languages
                 </h2>
-                <div className="flex flex-wrap gap-2 text-xs">
+                <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-xs">
                   {languages.map((l) => (
-                    <div
-                      key={l.id}
-                      data-edit-item={l.id}
-                      className="px-3 py-1.5 rounded-xl border border-slate-200/80 bg-slate-50/60 flex items-center gap-1.5"
-                    >
+                    <div key={l.id} data-edit-item={l.id} className="flex items-center gap-1.5">
                       <span className="font-bold text-slate-900">{l.name}</span>
                       <span className="text-[11px] text-slate-500 font-medium">({l.proficiency})</span>
                     </div>

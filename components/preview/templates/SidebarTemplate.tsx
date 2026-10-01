@@ -213,7 +213,7 @@ export function SidebarTemplate({ data, focusedTarget }: TemplateProps) {
               className={`text-xs font-bold uppercase tracking-wider ${spacing.sectionHeaderMargin}`}
               style={{ color: accent }}
             >
-              Profile Overview
+              Summary
             </h2>
             <p className="text-xs text-slate-700 leading-relaxed">
               {summary}

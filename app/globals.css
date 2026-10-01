@@ -190,24 +190,25 @@ body {
     overflow: visible !important;
   }
 
-  /* Clear dark theme backgrounds on all container elements outside sheet */
+  /* Clear dark theme backgrounds on app containers; the sheet keeps its own colours */
   body,
-  body div,
-  body main,
-  body section {
+  body div:not(#cv-printable-sheet *):not(#cv-printable-sheet),
+  body main:not(#cv-printable-sheet *),
+  body section:not(#cv-printable-sheet *) {
     background-color: transparent !important;
     box-shadow: none !important;
     max-height: none !important;
     overflow: visible !important;
   }
 
-  /* Hide everything marked no-print, chrome bars, footers, etc. */
+  /* Hide everything marked no-print and app chrome. Templates use aside/header/footer
+     for CV content, so those elements are only hidden outside the sheet. */
   .no-print,
   .print\:hidden,
   header.no-print,
-  nav,
-  aside,
-  footer {
+  nav:not(#cv-printable-sheet *),
+  aside:not(#cv-printable-sheet *),
+  footer:not(#cv-printable-sheet *) {
     display: none !important;
   }
 
@@ -243,9 +244,14 @@ body {
     overflow: visible !important;
   }
 
-  /* Ensure resume template header is always displayed */
-  #cv-printable-sheet header {
-    display: block !important;
+  /* Never split an entry across pages, and keep headings with the content that follows */
+  #cv-printable-sheet [data-edit-item],
+  #cv-printable-sheet li {
+    break-inside: avoid;
+  }
+  #cv-printable-sheet h2,
+  #cv-printable-sheet h3 {
+    break-after: avoid;
   }
 
   /* Maintain exact print colors for badges, icons, borders, highlights */

@@ -14,9 +14,9 @@ export function getSpacingStyles(
 ): SpacingStyles {
   const getContainerPadding = () => {
     switch (documentMargins) {
-      case "compact": return "p-6 sm:p-7";
+      case "compact": return "p-6";
       case "spacious": return "p-10 sm:p-12";
-      case "standard": default: return "p-8 sm:p-10";
+      case "standard": default: return "p-8 sm:p-9";
     }
   };
 
@@ -24,7 +24,7 @@ export function getSpacingStyles(
     case "compact":
       return {
         containerPadding: getContainerPadding(),
-        sectionGap: "space-y-4",
+        sectionGap: "space-y-3.5",
         itemGap: "space-y-1.5",
         headerMargin: "pb-3.5 mb-3.5",
         sectionHeaderMargin: "mb-2",
@@ -41,10 +41,10 @@ export function getSpacingStyles(
     default:
       return {
         containerPadding: getContainerPadding(),
-        sectionGap: "space-y-6",
-        itemGap: "space-y-3",
-        headerMargin: "pb-5 mb-5",
-        sectionHeaderMargin: "mb-3",
+        sectionGap: "space-y-5",
+        itemGap: "space-y-2.5",
+        headerMargin: "pb-4 mb-4",
+        sectionHeaderMargin: "mb-2.5",
       };
   }
 }
