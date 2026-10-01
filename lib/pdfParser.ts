@@ -168,15 +168,16 @@ export function parseResumeText(text: string): ResumeData {
   }
 
   // Website / Portfolio
+  const emailDomain = (resume.personalInfo.email.split("@")[1] || "").toLowerCase();
   const websiteMatches = Array.from(
     text.matchAll(/(?:https?:\/\/)?(?:www\.)?([a-zA-Z0-9-]+\.(?:com|org|io|dev|net|me|co|nl|sr|app|tech)(?:\/[^\s,\-]*)?)/gi)
   );
   for (const wm of websiteMatches) {
     const domain = wm[1] || wm[0];
     if (
-      !/gmail\.com|yahoo\.com|outlook\.com|hotmail\.com|linkedin\.com|github\.com|icloud\.com|proton\.me|gitlab\.com/i.test(
-        domain
-      )
+      !/gmail\.com|yahoo\.com|outlook\.com|hotmail\.com|icloud\.com|proton\.me|linkedin\.com|github\.com|gitlab\.com/i.test(domain) &&
+      // The domain of the candidate's own email address is their mail provider or employer, not a portfolio
+      domain.toLowerCase() !== emailDomain
     ) {
       resume.personalInfo.website = domain.replace(/^https?:\/\//, "");
       break;

@@ -12,7 +12,8 @@ ApexCV is a modern resume and CV authoring platform built with **Next.js 14 (App
 - **Rich Text Support:** Native markdown support (`**bold**`, `*italic*`, `[links](url)`) within bullet points.
 - **Section Visibility:** Temporarily hide specific jobs or projects to tailor a CV to a specific role without deleting data.
 - **A4 Page Boundaries:** Visual dashed-line indicators in the editor to prevent unexpected PDF page-breaks.
-- **Public Share Links:** Generate read-only, shareable `/view/[id]` links to send directly to employers.
+- **Public Share Links:** Opt-in, read-only `/view/[id]` links with an optional expiry, to send directly to employers.
+- **Light & Dark Theme:** Follows the system setting, with a manual toggle.
 - **PDF Resume Import:** Extract contact info, work experience, education, and technical skills from existing PDF resumes.
 - **Vector PDF Export:** High-quality, text-selectable PDF export via native browser print.
 - **Debounced SQLite Autosave:** Built with Node 22 native `node:sqlite`.
@@ -40,8 +41,8 @@ ApexCV is a modern resume and CV authoring platform built with **Next.js 14 (App
 ### 1. Installation
 
 ```bash
-git clone <repository-url>
-cd cv-builder
+git clone git@github.com:pawiromitchel/ApexCV.git
+cd ApexCV
 npm install
 ```
 
@@ -62,6 +63,8 @@ Open [http://localhost:3001](http://localhost:3001) in your browser.
 ---
 
 ## Production & Docker
+
+Set `NEXT_PUBLIC_SITE_URL` to your public origin so link previews (Open Graph) use absolute URLs. The optional `cloudflared` service in `docker-compose.yml` reads `CLOUDFLARE_TUNNEL_TOKEN` from your environment; remove it if you don't use a tunnel.
 
 ### Local Build & Start
 
@@ -85,17 +88,17 @@ docker compose ps
 
 ### Data Persistence & SQLite Volume
 
-The embedded SQLite database (`cv_builder.db`) is stored inside `/app/data` within the container, which is mounted to a named Docker volume `apexcv_data`:
+The embedded SQLite database (`cv_builder.db`) is stored inside `/usr/src/app/data` within the container, which is mounted to a named Docker volume `apexcv_data`:
 
 - **Named Volume:** `apexcv_data`
-- **Container Path:** `/app/data/cv_builder.db`
+- **Container Path:** `/usr/src/app/data/cv_builder.db`
 
 ---
 
 ## Project Structure
 
 ```
-cv-builder/
+ApexCV/
 ├── app/                  # Next.js app router pages and API
 ├── components/           # UI components, forms, and preview templates
 ├── lib/                  # Database, types, and utilities
@@ -108,16 +111,21 @@ cv-builder/
 
 ## API Reference
 
+Every `/api/resumes/**` route is scoped to the requesting browser: the anonymous device ID is sent as a bearer credential, and a resume can only be read or changed by the device that owns it.
+
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/resumes` | List all resumes |
+| `GET` | `/api/resumes` | List your resumes |
 | `POST` | `/api/resumes` | Create a new resume |
-| `GET` | `/api/resumes/:id` | Fetch resume JSON by ID |
-| `PUT` | `/api/resumes/:id` | Update resume JSON |
-| `DELETE` | `/api/resumes/:id` | Delete resume |
-| `POST` | `/api/resumes/:id/duplicate` | Duplicate resume |
-| `POST` | `/api/resumes/parse-pdf` | Extract data from PDF |
-| `POST` | `/api/auth/claim` | Link guest resumes to a user |
+| `GET` | `/api/resumes/:id` | Fetch one of your resumes |
+| `PUT` | `/api/resumes/:id` | Update one of your resumes |
+| `DELETE` | `/api/resumes/:id` | Delete one of your resumes |
+| `POST` | `/api/resumes/:id/duplicate` | Duplicate a resume |
+| `PUT` | `/api/resumes/:id/share` | Turn sharing on/off and set the link expiry |
+| `POST` | `/api/resumes/parse-pdf` | Extract data from a PDF |
+| `GET` | `/api/view/:identifier` | Public read of a shared resume (sharing must be enabled) |
+
+Sharing is opt-in: a resume is private until its owner enables a share link.
 
 ---
 
@@ -136,6 +144,8 @@ node scripts/test-pdf-import.mjs
 
 ---
 
-## AI Agent Integration
+---
 
-See [AGENTS.md](./AGENTS.md) for architectural constraints, database guidelines, and the file index.
+## License
+
+[MIT](./LICENSE)
