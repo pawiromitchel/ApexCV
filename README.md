@@ -1,4 +1,14 @@
-# ApexCV
+<p align="center">
+  <img src="public/favicon.svg" alt="ApexCV logo" width="88" height="88" />
+</p>
+
+<h1 align="center">ApexCV</h1>
+
+<p align="center"><b>Write a CV you're proud to send.</b></p>
+
+<p align="center">
+  <img src="docs/screenshot.png" alt="ApexCV editor with live CV preview" width="900" />
+</p>
 
 ApexCV is a modern resume and CV authoring platform built with **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS**, and **Node 22 `node:sqlite`**. It features split-screen live editing, five ATS-optimized templates, drag-and-drop section reordering, PDF importing, and vector PDF exporting.
 
