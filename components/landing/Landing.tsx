@@ -8,6 +8,7 @@ import {
   Eye,
   FileCheck2,
   FileUp,
+  Github,
   Link2,
   MonitorSmartphone,
   Plus,
@@ -18,6 +19,8 @@ import { fadeUp, stagger, spring } from "@/lib/motion";
 import { ApexLogo } from "@/components/ui/ApexLogo";
 import { buttonVariants } from "@/components/ui/Button";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+
+const GITHUB_URL = "https://github.com/pawiromitchel/ApexCV";
 import { TemplateThumbnail } from "@/components/preview/TemplateThumbnail";
 import { TEMPLATES } from "@/components/editor/styling/ThemeToolbar";
 import { HeroDemo } from "./HeroDemo";
@@ -75,11 +78,16 @@ export function Landing() {
           <span className="inline-flex items-center gap-2">
             <ApexLogo size={18} className="h-[18px] w-[18px]" /> © {new Date().getFullYear()} ApexCV
           </span>
-          <span>
+          <span className="inline-flex items-center gap-4">
+            <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-fg-secondary transition-colors hover:text-fg">
+              <Github className="h-4 w-4" aria-hidden /> GitHub
+            </a>
+            <span>
             Made by{" "}
             <a href="https://pawiromitchel.com/" target="_blank" rel="noopener noreferrer" className="text-fg-secondary underline decoration-line-strong underline-offset-4 transition-colors hover:text-fg">
               Mitchel
             </a>
+            </span>
           </span>
         </div>
       </footer>
@@ -107,6 +115,15 @@ function Nav() {
           ))}
         </nav>
         <div className="flex items-center gap-1.5">
+          <a
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="ApexCV on GitHub"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
+          >
+            <Github className="h-[18px] w-[18px]" aria-hidden />
+          </a>
           <ThemeToggle />
           <Link href="/app" className={buttonVariants({ variant: "primary" })}>
             Open app
