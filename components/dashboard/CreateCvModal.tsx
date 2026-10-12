@@ -21,12 +21,12 @@ import { TEMPLATES } from "@/components/editor/styling/ThemeToolbar";
 
 export type CreateMode = "template" | "import";
 
-export function CreateCvModal({ open, onClose, initialMode = "template" }: { open: boolean; onClose: () => void; initialMode?: CreateMode }) {
+export function CreateCvModal({ open, onClose, initialMode = "template", initialTemplate }: { open: boolean; onClose: () => void; initialMode?: CreateMode; initialTemplate?: TemplateId }) {
   const router = useRouter();
   const { toast } = useToast();
   const [mode, setMode] = useState<CreateMode>(initialMode);
   const [title, setTitle] = useState("");
-  const [template, setTemplate] = useState<TemplateId>("modern-tech");
+  const [template, setTemplate] = useState<TemplateId>(initialTemplate ?? "modern-tech");
   const [withExample, setWithExample] = useState(false);
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -39,6 +39,7 @@ export function CreateCvModal({ open, onClose, initialMode = "template" }: { ope
     setLastOpen(open);
     if (open) {
       setMode(initialMode);
+      if (initialTemplate) setTemplate(initialTemplate);
       setError(null);
     }
   }

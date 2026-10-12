@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { Copy, FilePlus2, FileUp, Globe2, MoreHorizontal, PenLine, Plus, Search, Trash2 } from "lucide-react";
-import { ResumeSummary } from "@/lib/types";
+import { ResumeSummary, TemplateId } from "@/lib/types";
+import { TEMPLATES } from "@/components/editor/styling/ThemeToolbar";
 import { getClientDeviceId } from "@/lib/deviceAuth";
 import { timeAgo } from "@/lib/time";
 import { spring, fadeUp, stagger } from "@/lib/motion";
@@ -27,6 +28,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [query, setQuery] = useState("");
+  const [initialTemplate, setInitialTemplate] = useState<TemplateId | undefined>();
   const [createMode, setCreateMode] = useState<CreateMode | null>(null);
 
   const load = useCallback(async () => {
@@ -49,8 +51,11 @@ export default function DashboardPage() {
 
   // Deep links from the landing page: /app?new=template or /app?new=import
   useEffect(() => {
-    const intent = new URLSearchParams(window.location.search).get("new");
+    const params = new URLSearchParams(window.location.search);
+    const intent = params.get("new");
+    const tpl = params.get("template");
     if (intent === "template" || intent === "import") {
+      if (tpl && TEMPLATES.some((t) => t.id === tpl)) setInitialTemplate(tpl as TemplateId);
       setCreateMode(intent);
       window.history.replaceState(null, "", "/app");
     }
@@ -238,7 +243,7 @@ export default function DashboardPage() {
         )}
       </main>
 
-      <CreateCvModal open={createMode !== null} initialMode={createMode ?? "template"} onClose={() => setCreateMode(null)} />
+      <CreateCvModal open={createMode !== null} initialMode={createMode ?? "template"} initialTemplate={initialTemplate} onClose={() => setCreateMode(null)} />
     </div>
   );
 }

@@ -208,7 +208,7 @@ function Templates() {
                 <TemplateThumbnail data={initialResumeData} templateId={t.id} aspect="page" className="border-b border-line" />
                 <div className="px-3 py-2.5">
                   <Link
-                    href="/app?new=template"
+                    href={`/app?new=template&template=${t.id}`}
                     className="text-sm font-semibold outline-none after:absolute after:inset-0 after:rounded-xl focus-visible:after:ring-2 focus-visible:after:ring-primary/60"
                   >
                     {t.name}
