@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState } from "react";
+import { track } from "@/lib/analytics";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { FilePlus2, FileUp, Loader2, ShieldCheck, UploadCloud } from "lucide-react";
@@ -56,6 +57,7 @@ export function CreateCvModal({ open, onClose, initialMode = "template", initial
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error);
+      track("resume_created", { template, sample: withExample });
       router.push(`/app/${json.resume.id}`);
     } catch {
       setError("Couldn’t create your CV. Please try again.");
@@ -78,6 +80,7 @@ export function CreateCvModal({ open, onClose, initialMode = "template", initial
       const res = await fetch("/api/resumes/parse-pdf", { method: "POST", body: form, headers: { "x-device-id": getClientDeviceId() } });
       const json = await res.json();
       if (!json.success) throw new Error(json.error);
+      track("pdf_imported", { from: "dashboard" });
       toast({ variant: "success", title: "Imported your CV", description: "Check each section: PDF parsing isn’t perfect." });
       router.push(`/app/${json.resume.id}`);
     } catch (err: any) {

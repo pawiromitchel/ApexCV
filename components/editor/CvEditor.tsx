@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { track } from "@/lib/analytics";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import {
@@ -274,6 +275,7 @@ export function CvEditor({ initialData }: { initialData: ResumeData }) {
     setExportOpen(false);
     await autosave.flush();
     // Let the dialog finish closing so it never appears in the print snapshot
+    track("pdf_printed", { from: "editor" });
     window.setTimeout(() => window.print(), 120);
   };
 
@@ -329,6 +331,7 @@ export function CvEditor({ initialData }: { initialData: ResumeData }) {
       const res = await fetch("/api/resumes/parse-pdf", { method: "POST", body: form, headers: { "x-device-id": getClientDeviceId() } });
       const json = await res.json();
       if (!json.success) throw new Error(json.error);
+      track("pdf_imported", { from: "editor" });
       toast({ variant: "success", title: "Imported as a new CV", description: "Check each section: PDF parsing isn’t perfect." });
       router.push(`/app/${json.resume.id}`);
     } catch (err: any) {

@@ -103,6 +103,16 @@ The embedded SQLite database (`cv_builder.db`) is stored inside `/usr/src/app/da
 - **Named Volume:** `apexcv_data`
 - **Container Path:** `/usr/src/app/data/cv_builder.db`
 
+### Optional: self-hosted analytics (Umami)
+
+Analytics are **off by default**. The compose file includes an [Umami](https://umami.is) service (cookieless, privacy-friendly) with its own Postgres.
+
+1. Set `UMAMI_DB_PASSWORD` and `UMAMI_APP_SECRET` in `.env`, then `docker compose up -d umami`.
+2. Open the dashboard at `http://localhost:3100` (default login `admin` / `umami`; change it immediately) and add a website.
+3. Set `NEXT_PUBLIC_UMAMI_SRC=/stats/script.js` and `NEXT_PUBLIC_UMAMI_WEBSITE_ID` in `.env`, then rebuild: `docker compose build apexcv && docker compose up -d apexcv`.
+
+The dashboard stays bound to localhost; the app proxies only `/stats/script.js` and `/stats/api/send` to Umami, so nothing else about it is public. Page views report `/app/:id` and `/view/:id` instead of real ids, Do Not Track is honoured, and events (`resume_created`, `pdf_imported`, `pdf_printed`, `share_updated`, `template_changed`) never include resume content. See `lib/analytics.ts`.
+
 ---
 
 ## Project Structure

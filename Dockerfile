@@ -14,6 +14,12 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
+# Optional Umami tracker (inlined at build time; leave empty to disable)
+ARG NEXT_PUBLIC_UMAMI_SRC=""
+ARG NEXT_PUBLIC_UMAMI_WEBSITE_ID=""
+ENV NEXT_PUBLIC_UMAMI_SRC=$NEXT_PUBLIC_UMAMI_SRC
+ENV NEXT_PUBLIC_UMAMI_WEBSITE_ID=$NEXT_PUBLIC_UMAMI_WEBSITE_ID
+
 RUN npm run build
 
 FROM node:22-alpine AS runner

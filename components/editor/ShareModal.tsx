@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { track } from "@/lib/analytics";
 import { AnimatePresence, motion } from "motion/react";
 import { Check, CheckCircle2, Copy, ExternalLink, Link as LinkIcon, Loader2, XCircle } from "lucide-react";
 import { getClientDeviceId } from "@/lib/deviceAuth";
@@ -113,6 +114,7 @@ export function ShareModal({ isOpen, onClose, resumeId }: { isOpen: boolean; onC
         return;
       }
       apply(json.settings);
+      track("share_updated", { enabled, custom_url: !!customUrl.trim() });
       toast({ variant: "success", title: enabled ? "Public link is live" : "Public link turned off" });
     } catch {
       setError("Couldn’t update sharing. Check your connection and try again.");

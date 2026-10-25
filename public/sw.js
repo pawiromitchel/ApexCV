@@ -58,6 +58,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Never cache cross-origin requests or the proxied analytics tracker
+  if (url.origin !== self.location.origin || url.pathname.startsWith('/stats/')) {
+    return;
+  }
+
   // Bypass chrome-extension or other non-http schemes
   if (!url.protocol.startsWith('http')) {
     return;

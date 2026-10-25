@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { track } from "@/lib/analytics";
 import Link from "next/link";
 import { Download, Mail } from "lucide-react";
 import { ResumeData } from "@/lib/types";
@@ -61,7 +62,10 @@ export function PublicViewClient({ initialData, identifier }: { initialData: Res
               <Mail className="h-4 w-4" /> Contact
             </a>
           )}
-          <Button variant="primary" onClick={() => window.print()}>
+          <Button variant="primary" onClick={() => {
+              track("pdf_printed", { from: "public" });
+              window.print();
+            }}>
             <Download className="h-4 w-4" />
             <span className="hidden sm:inline">Download PDF</span>
           </Button>

@@ -3,6 +3,7 @@ import { Inter, Merriweather, Roboto_Mono, Playfair_Display, Plus_Jakarta_Sans }
 import "./globals.css";
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 import { Providers } from "@/components/Providers";
+import { Analytics } from "@/components/analytics/Analytics";
 import { themeInitScript } from "@/lib/themeScript";
 import { OG_IMAGE, SITE_URL } from "@/lib/site";
 
@@ -112,6 +113,7 @@ export default function RootLayout({
           <ServiceWorkerRegister />
           {children}
         </Providers>
+        <Analytics />
       </body>
     </html>
   );

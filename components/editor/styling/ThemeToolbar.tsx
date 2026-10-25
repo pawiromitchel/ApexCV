@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useDeferredValue, useEffect, useState } from "react";
+import { track } from "@/lib/analytics";
 import { motion } from "motion/react";
 import { Check } from "lucide-react";
 import { FontFamily, FontSizeScale, PageSize, ResumeData, SpacingScale, TemplateId, ThemeConfig } from "@/lib/types";
@@ -74,7 +75,10 @@ export function ThemeToolbar({ data, onChange }: ThemeToolbarProps) {
               name={t.name}
               description={t.desc}
               active={theme.templateId === t.id}
-              onSelect={() => onChange({ templateId: t.id })}
+              onSelect={() => {
+                track("template_changed", { template: t.id });
+                onChange({ templateId: t.id });
+              }}
               checkLayoutId="template-check"
             />
           ))}
